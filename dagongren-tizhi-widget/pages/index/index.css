@@ -1,0 +1,274 @@
+page {
+  background: #171717;
+  color: #f4f0e8;
+}
+
+.widget-page {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 32rpx 36rpx 48rpx;
+  background: #171717;
+  color: #f4f0e8;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.topline,
+.quiz-meta,
+.result-kicker,
+.quiz-actions,
+.result-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topline {
+  padding-bottom: 24rpx;
+  border-bottom: 1rpx solid #3c3b37;
+}
+
+.case-label,
+.status-label,
+.eyebrow,
+.progress-label,
+.result-mark,
+.fine-print {
+  font-size: 20rpx;
+  letter-spacing: 3rpx;
+  color: #a9a49b;
+}
+
+.status-label,
+.result-mark {
+  color: #d7f36b;
+}
+
+.state {
+  padding: 96rpx 0 0;
+}
+
+.home-state {
+  min-height: 1120rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-title,
+.result-title {
+  display: block;
+  margin-top: 34rpx;
+  font-size: 68rpx;
+  line-height: 1.16;
+  font-weight: 700;
+  letter-spacing: -3rpx;
+}
+
+.hero-accent {
+  color: #d7f36b;
+}
+
+.hero-copy,
+.home-note,
+.result-summary,
+.result-detail {
+  display: block;
+  color: #c4c0b8;
+  font-size: 28rpx;
+  line-height: 1.7;
+}
+
+.hero-copy {
+  margin-top: 38rpx;
+  max-width: 620rpx;
+}
+
+.archive-line {
+  width: 100%;
+  height: 1rpx;
+  margin: 86rpx 0 32rpx;
+  background: #3c3b37;
+}
+
+.home-note {
+  max-width: 560rpx;
+  font-size: 24rpx;
+  color: #a9a49b;
+}
+
+button {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  line-height: 1.3;
+  box-sizing: border-box;
+}
+
+button::after {
+  border: 0;
+}
+
+.primary-button,
+.ghost-button,
+.share-button,
+.back-button,
+.option-button {
+  min-height: 96rpx;
+  padding: 0 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.primary-button {
+  margin-top: 48rpx;
+  background: #d7f36b;
+  color: #171717;
+}
+
+.ghost-button {
+  margin-top: 18rpx;
+  border: 1rpx solid #65635d;
+  background: transparent;
+  color: #f4f0e8;
+}
+
+.fine-print {
+  margin-top: auto;
+  padding-top: 48rpx;
+  line-height: 1.6;
+  letter-spacing: 1rpx;
+}
+
+.quiz-state,
+.result-state {
+  padding-top: 58rpx;
+}
+
+.progress-track {
+  height: 6rpx;
+  margin-top: 22rpx;
+  background: #3c3b37;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #d7f36b;
+  transition: width 180ms ease-out;
+}
+
+.question-title {
+  display: block;
+  margin: 72rpx 0 42rpx;
+  font-size: 42rpx;
+  line-height: 1.38;
+  font-weight: 650;
+}
+
+.option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.option-button {
+  justify-content: flex-start;
+  text-align: left;
+  border: 1rpx solid #504e48;
+  background: #20201e;
+  color: #d9d5cc;
+}
+
+.option-button.is-selected {
+  border-color: #d7f36b;
+  background: #d7f36b;
+  color: #171717;
+}
+
+.quiz-actions {
+  margin-top: 34rpx;
+  gap: 18rpx;
+}
+
+.back-button {
+  flex: 0 0 180rpx;
+  border: 1rpx solid #504e48;
+  background: transparent;
+  color: #a9a49b;
+}
+
+.next-button {
+  flex: 1;
+  margin-top: 0;
+}
+
+.result-title {
+  margin-top: 44rpx;
+  font-size: 64rpx;
+}
+
+.result-summary {
+  margin-top: 18rpx;
+  color: #d7f36b;
+}
+
+.quote-card {
+  margin-top: 54rpx;
+  padding: 42rpx 34rpx;
+  background: #f4f0e8;
+  color: #171717;
+}
+
+.quote-mark {
+  display: block;
+  color: #e7795b;
+  font-size: 64rpx;
+  line-height: 0.6;
+}
+
+.quote-text {
+  display: block;
+  margin-top: 20rpx;
+  font-size: 34rpx;
+  line-height: 1.5;
+  font-weight: 650;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 30rpx;
+}
+
+.tag {
+  padding: 10rpx 18rpx;
+  border: 1rpx solid #65635d;
+  color: #d7f36b;
+  font-size: 22rpx;
+}
+
+.result-detail {
+  margin-top: 36rpx;
+  font-size: 26rpx;
+}
+
+.result-actions {
+  display: flex;
+  flex-direction: column;
+  margin-top: 42rpx;
+}
+
+.result-actions .primary-button,
+.result-actions .share-button,
+.result-actions .ghost-button {
+  width: 100%;
+  margin-top: 14rpx;
+}
+
+.share-button {
+  border: 1rpx solid #d7f36b;
+  background: transparent;
+  color: #d7f36b;
+}
