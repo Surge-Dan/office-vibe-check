@@ -1,6 +1,7 @@
 module.exports = [
   {
     id: 'fish-hermit',
+    code: 'F-01',
     name: '摸鱼隐士体',
     tags: ['摸鱼', '划水', '带薪清醒'],
     summary: '工作不是人生，但要摸得专业。',
@@ -10,6 +11,7 @@ module.exports = [
   },
   {
     id: 'low-key-roll',
+    code: 'R-02',
     name: '低调卷王体',
     tags: ['结果导向', '暗中发力', '必须收口'],
     summary: '不喊口号，但事情一定要做成。',
@@ -19,6 +21,7 @@ module.exports = [
   },
   {
     id: 'cake-immune',
+    code: 'C-03',
     name: '画饼免疫体',
     tags: ['看行动', '承诺折损', '人间清醒'],
     summary: '听得懂承诺背后的真实含义。',
@@ -28,6 +31,7 @@ module.exports = [
   },
   {
     id: 'blame-magnet',
+    code: 'B-04',
     name: '背锅吸铁石体',
     tags: ['兜底', '责任感', '边界预警'],
     summary: '工作越做越多，责任越背越稳。',
@@ -37,6 +41,7 @@ module.exports = [
   },
   {
     id: 'minimum-master',
+    code: 'M-05',
     name: '糊弄学宗师体',
     tags: ['先上线', '最小可行', '差不多得了'],
     summary: '先交付，再决定要不要精致。',
@@ -46,6 +51,7 @@ module.exports = [
   },
   {
     id: 'class-flavor',
+    code: 'CL-06',
     name: '班味浓度超标体',
     tags: ['精神内耗', '下班失联', '工位余震'],
     summary: '人已经下班，灵魂还在会议室。',
@@ -55,6 +61,7 @@ module.exports = [
   },
   {
     id: 'reverse-roll',
+    code: 'V-07',
     name: '反向内卷体',
     tags: ['边界感', '效率优先', '拒绝无效竞争'],
     summary: '不和别人比加班，只和问题较劲。',
@@ -64,6 +71,7 @@ module.exports = [
   },
   {
     id: 'meeting-escape',
+    code: 'E-08',
     name: '会议逃生专家体',
     tags: ['少开会', '抓结论', '拒绝绕圈'],
     summary: '能用一句话解决，绝不扩展成会议。',

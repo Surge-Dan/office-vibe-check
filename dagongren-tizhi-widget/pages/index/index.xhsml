@@ -4,18 +4,18 @@
     <text class="status-label">STILL ALIVE</text>
   </view>
 
-  <view xhs:if="{{mode === 'home'}}" class="state home-state">
+  <view xhs:if="{{isHome}}" class="state home-state">
     <text class="eyebrow">WORKPLACE SPECIMEN</text>
     <text class="hero-title">你的工位，<text class="hero-accent">究竟是什么体质？</text></text>
     <text class="hero-copy">做 7 道题，看看你在职场里靠什么活下来。</text>
     <view class="archive-line"></view>
     <text class="home-note">不是职业测评。只是想知道，你每天到底是怎么活下来的。</text>
-    <button class="primary-button" bindtap="startQuiz">开始建档</button>
-    <button xhs:if="{{hasLastResult}}" class="ghost-button" bindtap="showLastResult">查看上次结果</button>
+    <button class="primary-button" hover-class="button-pressed" bindtap="startQuiz">开始建档</button>
+    <button xhs:if="{{hasLastResult}}" class="ghost-button" hover-class="button-pressed" bindtap="showLastResult">查看上次结果</button>
     <text class="fine-print">仅供娱乐，不代表真实职业能力或人格判断</text>
   </view>
 
-  <view xhs:if="{{mode === 'quiz'}}" class="state quiz-state">
+  <view xhs:if="{{isQuiz}}" class="state quiz-state">
     <view class="quiz-meta">
       <text class="eyebrow">现场记录</text>
       <text class="progress-label">{{progress}}</text>
@@ -23,19 +23,21 @@
     <view class="progress-track"><view class="progress-fill" style="width: {{progressWidth}}%;"></view></view>
     <text class="question-title">{{currentQuestion.title}}</text>
     <view class="option-list">
-      <button class="option-button {{selectedIndex === 0 ? 'is-selected' : ''}}" data-index="0" bindtap="selectOption">{{currentQuestion.options[0].text}}</button>
-      <button class="option-button {{selectedIndex === 1 ? 'is-selected' : ''}}" data-index="1" bindtap="selectOption">{{currentQuestion.options[1].text}}</button>
-      <button class="option-button {{selectedIndex === 2 ? 'is-selected' : ''}}" data-index="2" bindtap="selectOption">{{currentQuestion.options[2].text}}</button>
-      <button class="option-button {{selectedIndex === 3 ? 'is-selected' : ''}}" data-index="3" bindtap="selectOption">{{currentQuestion.options[3].text}}</button>
+      <button class="option-button {{optionAClass}}" hover-class="button-pressed" data-index="0" bindtap="selectOption"><text class="option-index">A</text><text class="option-copy">{{currentQuestion.options[0].text}}</text></button>
+      <button class="option-button {{optionBClass}}" hover-class="button-pressed" data-index="1" bindtap="selectOption"><text class="option-index">B</text><text class="option-copy">{{currentQuestion.options[1].text}}</text></button>
+      <button class="option-button {{optionCClass}}" hover-class="button-pressed" data-index="2" bindtap="selectOption"><text class="option-index">C</text><text class="option-copy">{{currentQuestion.options[2].text}}</text></button>
+      <button class="option-button {{optionDClass}}" hover-class="button-pressed" data-index="3" bindtap="selectOption"><text class="option-index">D</text><text class="option-copy">{{currentQuestion.options[3].text}}</text></button>
     </view>
     <view class="quiz-actions">
-      <button class="back-button" bindtap="previousQuestion">返回</button>
-      <button class="primary-button next-button" bindtap="nextQuestion">{{currentIndex === 6 ? '生成结果' : '继续'}}</button>
+      <button class="back-button" hover-class="button-pressed" bindtap="previousQuestion">返回</button>
+      <button class="primary-button next-button" hover-class="button-pressed" bindtap="nextQuestion">{{nextLabel}}</button>
     </view>
   </view>
 
-  <view xhs:if="{{mode === 'result'}}" class="state result-state">
+  <view xhs:if="{{isResult}}" class="state result-state">
     <view class="result-kicker"><text class="eyebrow">体质鉴定单 / 001</text><text class="result-mark">已归档</text></view>
+    <view class="result-accent" style="background: {{result.color}};"></view>
+    <text class="result-code">SPECIMEN / {{result.code}}</text>
     <text class="result-title">{{result.name}}</text>
     <text class="result-summary">{{result.summary}}</text>
     <view class="quote-card"><text class="quote-mark">“</text><text class="quote-text">{{result.quote}}</text></view>
@@ -46,8 +48,8 @@
     </view>
     <text class="result-detail">{{result.detail}}</text>
     <view class="result-actions">
-      <button class="share-button" open-type="share" data-share-type="normal">分享这张档案</button>
-      <button class="ghost-button" bindtap="restartQuiz">再测一次</button>
+      <button class="share-button" hover-class="button-pressed" open-type="share" data-share-type="normal">分享我的结果</button>
+      <button class="ghost-button" hover-class="button-pressed" bindtap="restartQuiz">再测一次</button>
     </view>
     <text class="fine-print">结果仅供娱乐，不代表真实职业能力或人格判断</text>
   </view>

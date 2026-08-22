@@ -107,6 +107,10 @@ button::after {
   border: 0;
 }
 
+.button-pressed {
+  opacity: 0.78;
+}
+
 .primary-button,
 .ghost-button,
 .share-button,
@@ -123,7 +127,7 @@ button::after {
 
 .primary-button {
   margin-top: 48rpx;
-  background: #d7f36b;
+  background: #e7795b;
   color: #171717;
 }
 
@@ -155,7 +159,6 @@ button::after {
 .progress-fill {
   height: 100%;
   background: #d7f36b;
-  transition: width 180ms ease-out;
 }
 
 .question-title {
@@ -163,13 +166,12 @@ button::after {
   margin: 72rpx 0 42rpx;
   font-size: 42rpx;
   line-height: 1.38;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .option-list {
   display: flex;
   flex-direction: column;
-  gap: 18rpx;
 }
 
 .option-button {
@@ -180,19 +182,39 @@ button::after {
   color: #d9d5cc;
 }
 
+.option-button + .option-button {
+  margin-top: 18rpx;
+}
+
+.option-index {
+  flex: 0 0 46rpx;
+  color: #8b877e;
+  font-size: 22rpx;
+  font-weight: 700;
+  letter-spacing: 1rpx;
+}
+
+.option-copy {
+  flex: 1;
+}
+
 .option-button.is-selected {
   border-color: #d7f36b;
   background: #d7f36b;
   color: #171717;
 }
 
+.option-button.is-selected .option-index {
+  color: #171717;
+}
+
 .quiz-actions {
   margin-top: 34rpx;
-  gap: 18rpx;
 }
 
 .back-button {
   flex: 0 0 180rpx;
+  margin-right: 18rpx;
   border: 1rpx solid #504e48;
   background: transparent;
   color: #a9a49b;
@@ -206,6 +228,20 @@ button::after {
 .result-title {
   margin-top: 44rpx;
   font-size: 64rpx;
+}
+
+.result-accent {
+  width: 72rpx;
+  height: 10rpx;
+  margin-top: 38rpx;
+}
+
+.result-code {
+  display: block;
+  margin-top: 18rpx;
+  color: #a9a49b;
+  font-size: 20rpx;
+  letter-spacing: 3rpx;
 }
 
 .result-summary {
@@ -232,17 +268,17 @@ button::after {
   margin-top: 20rpx;
   font-size: 34rpx;
   line-height: 1.5;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .tag-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 12rpx;
   margin-top: 30rpx;
 }
 
 .tag {
+  margin: 0 12rpx 12rpx 0;
   padding: 10rpx 18rpx;
   border: 1rpx solid #65635d;
   color: #d7f36b;
@@ -268,7 +304,7 @@ button::after {
 }
 
 .share-button {
-  border: 1rpx solid #d7f36b;
+  border: 1rpx solid #e7795b;
   background: transparent;
-  color: #d7f36b;
+  color: #e7795b;
 }

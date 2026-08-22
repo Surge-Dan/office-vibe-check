@@ -6,6 +6,7 @@ const types = require('../../dagongren-tizhi-widget/data/types.js');
 const {
   calculateResult,
   formatProgress,
+  formatProgressPercent,
   validateQuestionBank,
 } = require('../../dagongren-tizhi-widget/assets/quiz-core.js');
 
@@ -22,10 +23,13 @@ test('validates question and type content before the widget can ship', () => {
 test('rejects a type that cannot be selected by any answer option', () => {
   const unreachableTypes = types.map((type) => type.id === 'meeting-escape' ? {
     id: 'unreachable',
+    code: 'U-00',
     name: '无入口体质',
     tags: ['无', '无', '无'],
     summary: '不应该被发布。',
     quote: '没有任何选项能选中我。',
+    detail: '不应该被发布。',
+    color: '#ffffff',
   } : type);
   const questionsWithoutMeetingType = questions.map((question) => ({
     ...question,
@@ -57,9 +61,36 @@ test('returns a stable result payload for a complete answer set', () => {
   assert.ok(first.quote);
 });
 
+test('keeps every published type reachable as a winning result', () => {
+  const winners = new Set();
+  const visit = (index, answers) => {
+    if (index === questions.length) {
+      winners.add(calculateResult(answers, questions, types).id);
+      return;
+    }
+    questions[index].options.forEach((option) => visit(index + 1, answers.concat(option.id)));
+  };
+
+  visit(0, []);
+  assert.deepEqual(winners, new Set(types.map((type) => type.id)));
+});
+
 test('rejects incomplete or unknown answers instead of silently generating a result', () => {
   assert.throws(
     () => calculateResult(['missing-option'], questions, types),
+    /答案不完整或无效/,
+  );
+
+  const answerFromAnotherQuestion = questions.map(() => questions[0].options[0].id);
+  assert.throws(
+    () => calculateResult(answerFromAnotherQuestion, questions, types),
+    /答案不完整或无效/,
+  );
+
+  const sparseAnswers = new Array(questions.length);
+  sparseAnswers[0] = questions[0].options[0].id;
+  assert.throws(
+    () => calculateResult(sparseAnswers, questions, types),
     /答案不完整或无效/,
   );
 });
@@ -67,5 +98,8 @@ test('rejects incomplete or unknown answers instead of silently generating a res
 test('formats the one-page quiz progress for the visible question', () => {
   assert.equal(formatProgress(0, 7), '01 / 07');
   assert.equal(formatProgress(6, 7), '07 / 07');
+  assert.equal(formatProgressPercent(0, 7), 14);
+  assert.equal(formatProgressPercent(6, 7), 100);
   assert.throws(() => formatProgress(7, 7), /题目进度无效/);
+  assert.throws(() => formatProgressPercent(7, 7), /题目进度无效/);
 });
