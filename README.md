@@ -10,6 +10,7 @@
 
 - 7 道真实职场场景单选题，每题 4 个选项
 - 8 种打工人体质：摸鱼隐士体、低调卷王体、画饼免疫体等
+- 每种体质保留 5 条短批注，按确定性变体索引展示和分享
 - 进度展示、返回修改和重新测试
 - 本地确定性计分，结果可重复复现
 - 本地保存最近一次结果
@@ -58,7 +59,7 @@
 项目逻辑使用 Node.js 原生测试，不需要安装第三方依赖：
 
 ```bash
-node --test tests/dagongren/quiz-core.test.js tests/dagongren/widget-contract.test.js
+node --test tests/dagongren/quiz-core.test.js tests/dagongren/widget-contract.test.js tests/dagongren/page-flow.test.js
 ```
 
 当前测试覆盖：
@@ -66,6 +67,7 @@ node --test tests/dagongren/quiz-core.test.js tests/dagongren/widget-contract.te
 - 题目数量和选项数量
 - 体质库完整性和可达性
 - 计分结果稳定性
+- 结果短批注变体、最近一次结果和分享 query 的一致性
 - 不完整答案、跨题答案和未知答案拦截
 - 选择、继续、返回、完成、重测和上次结果流程
 - 异常本地缓存不渲染空白结果
@@ -92,7 +94,8 @@ node --test tests/dagongren/quiz-core.test.js tests/dagongren/widget-contract.te
 │     └─ index.css              # 档案局视觉样式
 ├─ tests/dagongren/
 │  ├─ quiz-core.test.js         # 核心逻辑测试
-│  └─ widget-contract.test.js   # 小组件结构约束测试
+│  ├─ widget-contract.test.js   # 小组件结构约束测试
+│  └─ page-flow.test.js         # 页面交互、缓存和分享流程测试
 └─ docs/superpowers/
    ├─ specs/                    # 产品设计文档
    └─ plans/                    # 开发计划
@@ -110,7 +113,7 @@ node --test tests/dagongren/quiz-core.test.js tests/dagongren/widget-contract.te
 
 官方资料显示，小组件目前要求单页面、包体积不超过 2MB，并限制支付、交易、导航等复杂能力；当前仍处于邀请制灰度阶段。[小组件介绍](https://miniapp.xiaohongshu.com/doc/DC026740)
 
-平台分享当前实现为“结果页 + 自定义分享标题 + 结果类型 query + 站内分享入口”：接收者打开分享链接后会直接看到对应体质结果，不会只回到首页。它不是本地生成图片或写入相册，这样能保持交付包轻量，也避免把未确认的 Canvas/相册能力伪装成已验证功能。[小组件转发](https://miniapp.xiaohongshu.com/doc/DC835356)
+平台分享当前实现为“结果页 + 自定义分享标题 + 结果类型/文案变体 query + 站内分享入口”：接收者打开分享链接后会直接看到对应体质和同一条短批注，不会只回到首页。它不是本地生成图片或写入相册，这样能保持交付包轻量，也避免把未确认的 Canvas/相册能力伪装成已验证功能。[小组件转发](https://miniapp.xiaohongshu.com/doc/DC835356)
 
 ## 相关文档
 

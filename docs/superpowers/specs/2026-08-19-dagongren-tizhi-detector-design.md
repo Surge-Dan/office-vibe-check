@@ -359,11 +359,11 @@ project/
 
 - 右上角分享；
 - 页面内展示结果档案；
-- 自定义分享标题；
+- 自定义分享标题，并透传结果类型与文案变体 query；
 - 使用小组件当前模板支持的分享字段；
 - 分享后重新打开并查看结果。
 
-小红书页面文档提供 `onShareAppMessage` 和 `open-type="share"` 等分享能力；本工程只自定义分享标题，不假设小程序专属 Canvas、相册保存或自定义图片接口。[小组件转发](https://miniapp.xiaohongshu.com/doc/DC835356)
+小红书页面文档提供 `onShareAppMessage` 和 `open-type="share"` 等分享能力；本工程自定义分享标题并透传结果 query，不假设小程序专属 Canvas、相册保存或自定义图片接口。[小组件转发](https://miniapp.xiaohongshu.com/doc/DC835356)
 
 ### 10.4 发布流程
 
@@ -386,7 +386,7 @@ project/
 MVP 只在本地保存：
 
 ```text
-lastResultType
+lastResult: { id, variantIndex }
 ```
 
 不保存姓名、手机号、头像、小红书账号、工作单位、职业和完整答案。

@@ -37,7 +37,7 @@ function validateQuestionBank(questions, types) {
   });
 
   types.forEach((type) => {
-    if (!type.id || !type.code || !type.name || !type.summary || !type.quote || !type.detail || !type.color || !Array.isArray(type.tags) || type.tags.length !== 3) {
+    if (!type.id || !type.code || !type.name || !type.summary || !type.quote || !type.detail || !type.color || !Array.isArray(type.tags) || type.tags.length !== 3 || !Array.isArray(type.copyVariants) || type.copyVariants.length < 5 || type.copyVariants.some((copy) => typeof copy !== 'string' || !copy.trim())) {
       throw new Error(`体质 ${type.id || 'unknown'} 的内容配置无效`);
     }
     if (!referencedTypeIds.has(type.id)) {
@@ -94,8 +94,12 @@ function calculateResult(answers, questions, types) {
       return order.get(a.id) - order.get(b.id);
     })[0];
 
+  const variantIndex = totals[winner.id] % winner.copyVariants.length;
+
   return {
     ...winner,
+    variantIndex,
+    quote: winner.copyVariants[variantIndex],
     score: totals[winner.id],
   };
 }

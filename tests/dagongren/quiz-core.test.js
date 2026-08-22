@@ -18,6 +18,7 @@ test('keeps the widget question bank at seven scenario questions with four optio
 
 test('validates question and type content before the widget can ship', () => {
   assert.equal(validateQuestionBank(questions, types), true);
+  assert.ok(types.every((type) => Array.isArray(type.copyVariants) && type.copyVariants.length >= 5));
 });
 
 test('rejects a type that cannot be selected by any answer option', () => {
@@ -30,6 +31,7 @@ test('rejects a type that cannot be selected by any answer option', () => {
     quote: '没有任何选项能选中我。',
     detail: '不应该被发布。',
     color: '#ffffff',
+    copyVariants: ['无入口。', '无入口。', '无入口。', '无入口。', '无入口。'],
   } : type);
   const questionsWithoutMeetingType = questions.map((question) => ({
     ...question,
@@ -59,6 +61,8 @@ test('returns a stable result payload for a complete answer set', () => {
   assert.equal(first.tags.length, 3);
   assert.ok(first.name);
   assert.ok(first.quote);
+  assert.ok(Number.isInteger(first.variantIndex));
+  assert.ok(first.copyVariants.includes(first.quote));
 });
 
 test('keeps every published type reachable as a winning result', () => {

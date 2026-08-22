@@ -19,7 +19,10 @@ function getLastResult() {
 
 function saveLastResult(result) {
   try {
-    xhs.setStorageSync(LAST_RESULT_KEY, { id: result.id });
+    xhs.setStorageSync(LAST_RESULT_KEY, {
+      id: result.id,
+      variantIndex: result.variantIndex,
+    });
   } catch (error) {
     // 本地缓存失败不影响本次测试和分享。
   }
@@ -27,6 +30,24 @@ function saveLastResult(result) {
 
 function getType(id) {
   return types.find((type) => type.id === id) || null;
+}
+
+function getResult(id, variantIndex) {
+  const type = getType(id);
+  if (!type) return null;
+
+  const numericIndex = Number(variantIndex);
+  const safeIndex = Number.isInteger(numericIndex)
+    && numericIndex >= 0
+    && numericIndex < type.copyVariants.length
+    ? numericIndex
+    : 0;
+
+  return {
+    ...type,
+    variantIndex: safeIndex,
+    quote: type.copyVariants[safeIndex],
+  };
 }
 
 function getOptionClasses(selectedIndex) {
@@ -77,9 +98,9 @@ Page({
     validateQuestionBank(questions, types);
     const last = getLastResult();
     const query = options.query || options;
-    const sharedResult = getType(query && query.type);
+    const sharedResult = getResult(query && query.type, query && query.v);
     this.setData({
-      hasLastResult: Boolean(last && getType(last.id)),
+      hasLastResult: Boolean(last && getResult(last.id, last.variantIndex)),
       ...(sharedResult ? getResultState(sharedResult) : {}),
     });
   },
@@ -106,7 +127,7 @@ Page({
 
   showLastResult() {
     const last = getLastResult();
-    const result = last && getType(last.id);
+    const result = last && getResult(last.id, last.variantIndex);
     if (!result) return;
     this.setData(getResultState(result));
   },
@@ -199,7 +220,9 @@ Page({
       title: result ? `我是${result.name}，你是哪种？` : '测测你的打工人体质',
       path: '/pages/index/index',
     };
-    if (result) payload.query = `type=${encodeURIComponent(result.id)}`;
+    if (result) {
+      payload.query = `type=${encodeURIComponent(result.id)}&v=${result.variantIndex}`;
+    }
     return payload;
   },
 });

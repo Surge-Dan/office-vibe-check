@@ -68,7 +68,7 @@ test('does not advance when the visible selection and stored answer disagree', (
   assert.deepEqual(toasts.at(-1), { title: '先选一个，再继续', icon: 'none' });
 });
 
-test('finishes the quiz, persists only the result id, and creates a share payload', () => {
+test('finishes the quiz, persists the result variant, and creates a share payload', () => {
   const { definition, instance, getSavedResult } = loadPage();
   definition.startQuiz.call(instance);
 
@@ -85,19 +85,31 @@ test('finishes the quiz, persists only the result id, and creates a share payloa
 
   assert.equal(instance.data.mode, 'result');
   assert.ok(instance.data.result.id);
-  assert.deepEqual(saved.value, { id: instance.data.result.id });
+  assert.deepEqual(saved.value, {
+    id: instance.data.result.id,
+    variantIndex: instance.data.result.variantIndex,
+  });
   assert.match(share.title, /^我是.+，你是哪种？$/);
   assert.equal(share.path, '/pages/index/index');
-  assert.equal(share.query, `type=${instance.data.result.id}`);
+  assert.equal(share.query, `type=${instance.data.result.id}&v=${instance.data.result.variantIndex}`);
 });
 
 test('opens a shared result directly when the page receives a valid type query', () => {
   const { definition, instance } = loadPage();
-  definition.onLoad.call(instance, { type: 'cake-immune' });
+  definition.onLoad.call(instance, { type: 'cake-immune', v: '2' });
 
   assert.equal(instance.data.mode, 'result');
   assert.equal(instance.data.isResult, true);
   assert.equal(instance.data.result.id, 'cake-immune');
+  assert.equal(instance.data.result.quote, '未来可期之前，先把资源、时间和负责人说清。');
+});
+
+test('reopens the same stored copy variant from local result history', () => {
+  const { definition, instance } = loadPage({ storedResult: { id: 'cake-immune', variantIndex: 2 } });
+  definition.onLoad.call(instance);
+  definition.showLastResult.call(instance);
+
+  assert.equal(instance.data.result.quote, '未来可期之前，先把资源、时间和负责人说清。');
 });
 
 test('ignores a malformed last-result cache instead of rendering a blank result', () => {
