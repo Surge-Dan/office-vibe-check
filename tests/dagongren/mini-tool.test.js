@@ -115,7 +115,9 @@ test('keeps the H5 runtime offline and free of forbidden browser capabilities', 
   assert.doesNotMatch(source, /<iframe|<object|target=["']_blank|\sdownload\s*=/i);
   assert.doesNotMatch(source, /type=["']module["']/i);
   assert.doesNotMatch(source, /\b(import|export)\s+/);
-  assert.ok(fs.existsSync(path.join(projectRoot, 'tool-icon.png')));
+  const icon = fs.readFileSync(path.join(projectRoot, 'tool-icon.png'));
+  assert.equal(icon.toString('ascii', 1, 4), 'PNG');
+  assert.equal(icon[25], 2, 'icon must use opaque RGB PNG color type, not RGBA transparency');
   assert.match(readProjectFile('style.css'), /overflow-x:\s*hidden/);
 });
 
