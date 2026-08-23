@@ -102,9 +102,16 @@ node --test tests/dagongren/quiz-core.test.js tests/dagongren/widget-contract.te
 
 浏览器流程测试需要 Playwright：
 
-```bash
-python C:\Users\Daniel\.codex\skills\webapp-testing\scripts\with_server.py --server "python -m http.server 4173 --directory dagongren-mini-tool" --port 4173 -- python tests/dagongren/mini-tool.browser.py
+```powershell
+# 终端 A：启动本地静态服务器
+python -m http.server 4177 --directory dagongren-mini-tool
+
+# 终端 B：运行浏览器验收（Windows）
+$env:MINI_TOOL_PORT = "4177"
+python tests/dagongren/mini-tool.browser.py
 ```
+
+浏览器测试完成后，在终端 A 按 `Ctrl+C` 停止服务器。测试脚本会覆盖启动、答题、返回保留答案、完成结果、刷新恢复、异常选择拦截，以及“无外网请求”检查。
 
 当前测试覆盖：
 
