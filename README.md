@@ -25,12 +25,12 @@
 
 - H5 根目录入口：`index.html`
 - 交付包大小：约 1.23 MB，低于 10 MB 上限，也低于建议的 2 MB
-- 图标：[`tool-icon.png`](./dagongren-mini-tool/assets/tool-icon.png)，1:1 PNG，约 1.23 MB，符合截图中的 5 MB 限制
+- 图标：[`tool-icon.png`](./dagongren-mini-tool/tool-icon.png)，1:1 PNG，约 1.23 MB，符合截图中的 5 MB 限制
 - 小工具名称：`班味鉴定所`
 - 简介：`7道题，测出你的打工人体质`
 - 运行方式：纯本地、离线、单页面，无网络、登录、外链、剪贴板和下载能力
 
-H5 包的目录内容直接位于 ZIP 根目录，包含 `index.html`、外置经典脚本、外置 CSS、本地题库和图标，符合官方离线 H5 ZIP 规范。
+H5 源码和 ZIP 内的所有文件均直接位于根目录，包含 `index.html`、外置经典脚本、外置 CSS、本地题库和图标。这样同时满足官方离线 H5 规则与发布后台“所有文件放在项目根目录”的实际校验。
 
 ## 技术边界
 
@@ -78,7 +78,7 @@ H5 包的目录内容直接位于 ZIP 根目录，包含 `index.html`、外置�
 
 1. 小工具名称填写：`班味鉴定所`。
 2. 简介填写：`7道题，测出你的打工人体质`。
-3. 图标上传：`dagongren-mini-tool/assets/tool-icon.png`。
+3. 图标上传：`dagongren-mini-tool/tool-icon.png`。
 4. 部署代码上传：`dagongren-mini-tool.zip`。
 5. 版本号可从 `1.0.0` 开始，最终以后台要求为准。
 
@@ -138,11 +138,12 @@ python tests/dagongren/mini-tool.browser.py
 .
 ├─ dagongren-mini-tool/
 │  ├─ index.html                # H5 根入口
-│  ├─ assets/main.js            # 单页状态和 DOM 事件
-│  ├─ assets/quiz-core.js       # 题库校验和计分
-│  ├─ assets/style.css          # 职场档案局视觉样式
-│  ├─ assets/tool-icon.png      # 发布后台图标
-│  └─ data/                     # 本地题库和体质库
+│  ├─ main.js                   # 单页状态和 DOM 事件
+│  ├─ quiz-core.js              # 题库校验和计分
+│  ├─ style.css                 # 职场档案局视觉样式
+│  ├─ tool-icon.png             # 发布后台图标
+│  ├─ questions.js              # 7 道题目
+│  └─ types.js                  # 8 种打工人体质
 ├─ dagongren-tizhi-widget/
 │  ├─ app.json                 # 小组件全局配置
 │  ├─ app.js                   # 小组件入口

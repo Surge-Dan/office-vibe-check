@@ -7,8 +7,6 @@ const test = require('node:test');
 
 const projectRoot = path.resolve(__dirname, '../../dagongren-mini-tool');
 const htmlPath = path.join(projectRoot, 'index.html');
-const dataPath = path.join(projectRoot, 'data');
-const assetPath = path.join(projectRoot, 'assets');
 
 function readProjectFile(relativePath) {
   return fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
@@ -17,9 +15,9 @@ function readProjectFile(relativePath) {
 function loadRuntime() {
   const sandbox = { window: {} };
   sandbox.globalThis = sandbox.window;
-  vm.runInNewContext(fs.readFileSync(path.join(dataPath, 'questions.js'), 'utf8'), sandbox);
-  vm.runInNewContext(fs.readFileSync(path.join(dataPath, 'types.js'), 'utf8'), sandbox);
-  vm.runInNewContext(fs.readFileSync(path.join(assetPath, 'quiz-core.js'), 'utf8'), sandbox);
+  vm.runInNewContext(fs.readFileSync(path.join(projectRoot, 'questions.js'), 'utf8'), sandbox);
+  vm.runInNewContext(fs.readFileSync(path.join(projectRoot, 'types.js'), 'utf8'), sandbox);
+  vm.runInNewContext(fs.readFileSync(path.join(projectRoot, 'quiz-core.js'), 'utf8'), sandbox);
   return sandbox.window;
 }
 
@@ -31,12 +29,12 @@ test('ships a root index.html with external classic scripts and relative assets'
   assert.doesNotMatch(html, /user-scalable\s*=|maximum-scale\s*=/i);
   assert.match(html, /class=["']skip-link["']/i);
   assert.match(html, /<main[^>]+id=["']main-content["'][^>]+tabindex=["']-1["']/i);
-  assert.match(html, /<link[^>]+href=["']\.\/assets\/style\.css["']/i);
-  assert.match(html, /<img[^>]+src=["']\.\/assets\/tool-icon\.png["']/i);
-  assert.match(html, /<script[^>]+src=["']\.\/data\/questions\.js["'][^>]*><\/script>/i);
-  assert.match(html, /<script[^>]+src=["']\.\/data\/types\.js["'][^>]*><\/script>/i);
-  assert.match(html, /<script[^>]+src=["']\.\/assets\/quiz-core\.js["'][^>]*><\/script>/i);
-  assert.match(html, /<script[^>]+src=["']\.\/assets\/main\.js["'][^>]*><\/script>/i);
+  assert.match(html, /<link[^>]+href=["']\.\/style\.css["']/i);
+  assert.match(html, /<img[^>]+src=["']\.\/tool-icon\.png["']/i);
+  assert.match(html, /<script[^>]+src=["']\.\/questions\.js["'][^>]*><\/script>/i);
+  assert.match(html, /<script[^>]+src=["']\.\/types\.js["'][^>]*><\/script>/i);
+  assert.match(html, /<script[^>]+src=["']\.\/quiz-core\.js["'][^>]*><\/script>/i);
+  assert.match(html, /<script[^>]+src=["']\.\/main\.js["'][^>]*><\/script>/i);
   assert.doesNotMatch(html, /<script(?![^>]+src=)[^>]*>/i);
   assert.doesNotMatch(html, /\son(?:click|input|change|submit)\s*=/i);
   assert.doesNotMatch(html, /<base\b|<iframe\b|<object\b|target=["']_blank["']/i);
@@ -101,11 +99,11 @@ test('keeps result copy variants deterministic and safely falls back on invalid 
 test('keeps the H5 runtime offline and free of forbidden browser capabilities', () => {
   const files = [
     'index.html',
-    'assets/main.js',
-    'assets/quiz-core.js',
-    'assets/style.css',
-    'data/questions.js',
-    'data/types.js',
+    'main.js',
+    'quiz-core.js',
+    'style.css',
+    'questions.js',
+    'types.js',
   ];
   const source = files.map((file) => readProjectFile(file)).join('\n');
   assert.doesNotMatch(source, /https?:\/\//i);
@@ -117,8 +115,8 @@ test('keeps the H5 runtime offline and free of forbidden browser capabilities', 
   assert.doesNotMatch(source, /<iframe|<object|target=["']_blank|\sdownload\s*=/i);
   assert.doesNotMatch(source, /type=["']module["']/i);
   assert.doesNotMatch(source, /\b(import|export)\s+/);
-  assert.ok(fs.existsSync(path.join(projectRoot, 'assets/tool-icon.png')));
-  assert.match(readProjectFile('assets/style.css'), /overflow-x:\s*hidden/);
+  assert.ok(fs.existsSync(path.join(projectRoot, 'tool-icon.png')));
+  assert.match(readProjectFile('style.css'), /overflow-x:\s*hidden/);
 });
 
 test('declares the expected one-page UI hooks for the browser flow', () => {
@@ -154,4 +152,11 @@ test('ships a flat upload zip with only supported static file types', () => {
   assert.ok(entries.every((entry) => allowed.has(path.extname(entry).toLowerCase())));
   assert.ok(!entries.some((entry) => /(^|\/)(node_modules|\.git|__MACOSX)(\/|$)|\.map$|vite\.config\./i.test(entry)));
   assert.ok(fs.statSync(zipPath).size < 10 * 1024 * 1024);
+});
+
+test('keeps every upload file directly in the zip root for the Xiaohongshu uploader', () => {
+  const zipPath = path.resolve(__dirname, '../../dagongren-mini-tool.zip');
+  const entries = execFileSync('tar', ['-tf', zipPath], { encoding: 'utf8' }).trim().split(/\r?\n/).filter(Boolean);
+
+  assert.ok(entries.every((entry) => !entry.includes('/')), `nested upload path found: ${entries.join(', ')}`);
 });

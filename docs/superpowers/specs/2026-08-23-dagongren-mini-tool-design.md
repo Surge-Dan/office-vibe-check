@@ -30,15 +30,15 @@
 ```text
 dagongren-mini-tool/
 ├─ index.html
-├─ assets/
-│  ├─ main.js
-│  ├─ quiz-core.js
-│  ├─ style.css
-│  └─ tool-icon.png
-└─ data/
-   ├─ questions.js
-   └─ types.js
+├─ main.js
+├─ quiz-core.js
+├─ style.css
+├─ tool-icon.png
+├─ questions.js
+└─ types.js
 ```
+
+为兼容发布后台的实际上传校验，源码和最终 ZIP 均采用扁平根目录，不使用 `assets/` 或 `data/` 子目录；所有引用统一使用 `./文件名`。
 
 数据使用经典脚本挂载到 `window`，不使用 ES Module，确保离线 WebView 直接加载。业务逻辑拆为题库、结果计算和页面状态三层，页面只通过 DOM 事件连接它们。
 
