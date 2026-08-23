@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#171717">
+  <title>班味鉴定所</title>
+  <link rel="stylesheet" href="./assets/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到内容</a>
+  <div class="app-shell">
+    <header class="topline">
+      <span class="case-label">CASE 001</span>
+      <span class="status-label">STILL ALIVE</span>
+    </header>
+
+    <main id="main-content" class="app-main" tabindex="-1">
+      <section id="home-screen" class="screen home-screen" aria-labelledby="home-title">
+        <div class="home-kicker">
+          <span class="eyebrow">WORKPLACE SPECIMEN</span>
+          <span class="file-tab">档案局 / 01</span>
+        </div>
+        <img class="tool-icon" src="./assets/tool-icon.png" alt="" width="82" height="82">
+        <h1 id="home-title">你的工位，<em>究竟是什么体质？</em></h1>
+        <p class="hero-copy">7 道题，看看你在职场里靠什么活下来。</p>
+        <div class="archive-rule" aria-hidden="true"><span></span></div>
+        <p class="home-note">不是职业测评。只是想知道，你每天到底是怎么活下来的。</p>
+        <div class="home-actions">
+          <button id="start-button" class="button button-primary" type="button">开始建档 <span aria-hidden="true">↗</span></button>
+          <button id="last-result-button" class="button button-quiet" type="button" hidden>查看上次结果</button>
+        </div>
+        <div class="home-footnote"><span>OFFLINE / 7 QUESTIONS</span><span>仅供娱乐</span></div>
+      </section>
+
+      <section id="quiz-screen" class="screen quiz-screen" aria-labelledby="question-title" hidden>
+        <div class="quiz-header">
+          <div>
+            <span class="eyebrow">现场记录</span>
+            <span id="progress-label" class="progress-label">01 / 07</span>
+          </div>
+          <span class="micro-label">单选 / SINGLE CHOICE</span>
+        </div>
+        <div class="progress-track" aria-hidden="true"><span id="progress-fill" class="progress-fill"></span></div>
+        <p id="question-title" class="question-title"></p>
+        <div id="option-list" class="option-list" role="radiogroup" aria-label="答题选项"></div>
+        <p id="quiz-message" class="inline-message" role="status" aria-live="polite"></p>
+        <div class="quiz-actions">
+          <button id="back-button" class="button button-back" type="button">返回</button>
+          <button id="next-button" class="button button-primary" type="button">继续 <span aria-hidden="true">→</span></button>
+        </div>
+      </section>
+
+      <section id="result-screen" class="screen result-screen" aria-labelledby="result-name" hidden>
+        <div class="result-header">
+          <span class="eyebrow">体质鉴定单 / 已归档</span>
+          <span id="result-code" class="result-code">SPECIMEN / F-01</span>
+        </div>
+        <div id="result-accent" class="result-accent" aria-hidden="true"></div>
+        <p class="result-label">YOUR WORKPLACE TYPE</p>
+        <h2 id="result-name" class="result-name"></h2>
+        <p id="result-summary" class="result-summary"></p>
+        <blockquote id="result-quote" class="result-quote"></blockquote>
+        <p class="select-hint">长按选中这句，发给同事</p>
+        <div id="result-tags" class="tag-row" aria-label="结果标签"></div>
+        <p id="result-detail" class="result-detail"></p>
+        <div class="result-actions">
+          <button id="restart-button" class="button button-primary" type="button">再测一次 <span aria-hidden="true">↗</span></button>
+        </div>
+        <p class="result-footnote">结果仅供娱乐，不代表真实职业能力或人格判断</p>
+      </section>
+    </main>
+
+    <footer class="app-footer"><span>班味鉴定所</span><span>NO DATA LEAVES THIS TOOL</span></footer>
+  </div>
+
+  <script src="./data/questions.js"></script>
+  <script src="./data/types.js"></script>
+  <script src="./assets/quiz-core.js"></script>
+  <script src="./assets/main.js"></script>
+</body>
+</html>

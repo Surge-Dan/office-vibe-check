@@ -32,7 +32,9 @@ dagongren-mini-tool/
 ├─ index.html
 ├─ assets/
 │  ├─ main.js
-│  └─ style.css
+│  ├─ quiz-core.js
+│  ├─ style.css
+│  └─ tool-icon.png
 └─ data/
    ├─ questions.js
    └─ types.js
