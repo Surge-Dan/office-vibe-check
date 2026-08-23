@@ -3,80 +3,147 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#171717">
+  <meta name="theme-color" content="#2457D6">
   <title>班味鉴定所</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
   <a class="skip-link" href="#main-content">跳到内容</a>
   <div class="app-shell">
-    <header class="topline">
-      <span class="case-label">CASE 001</span>
-      <span class="status-label">STILL ALIVE</span>
+    <header class="masthead" aria-label="班味鉴定所">
+      <div class="brand-lockup"><span class="brand-dot" aria-hidden="true"></span><strong>班味鉴定所</strong></div>
+      <span class="edition">WORKPLACE SPECIMEN / 02</span>
     </header>
 
-    <main id="main-content" class="app-main" tabindex="-1">
+    <main id="main-content" tabindex="-1">
       <section id="home-screen" class="screen home-screen" aria-labelledby="home-title">
-        <div class="home-kicker">
-          <span class="eyebrow">WORKPLACE SPECIMEN</span>
-          <span class="file-tab">档案局 / 01</span>
+        <div class="archive-tab">打工人求生样本 · 不联网</div>
+        <div class="hero-grid">
+          <div class="hero-copy-block">
+            <p class="eyebrow">今天不鉴定能力，只鉴定你怎么活下来</p>
+            <h1 id="home-title">你属于哪种<br><em>打工体质？</em></h1>
+            <p class="hero-copy">上班久了，每个人都会长出一套职场求生本能。测测你靠什么撑到今天。</p>
+          </div>
+          <div class="home-stamp-wrap" aria-hidden="true">
+            <canvas id="home-stamp" class="home-stamp" width="210" height="210"></canvas>
+            <span>待鉴定</span>
+          </div>
         </div>
-        <img class="tool-icon" src="./tool-icon.png" alt="" width="82" height="82">
-        <h1 id="home-title">你的工位，<em>究竟是什么体质？</em></h1>
-        <p class="hero-copy">7 道题，看看你在职场里靠什么活下来。</p>
-        <div class="archive-rule" aria-hidden="true"><span></span></div>
-        <p class="home-note">不是职业测评。只是想知道，你每天到底是怎么活下来的。</p>
+        <div class="home-meta">
+          <span>18–21 题动态路径</span><span>约 4 分钟</span><span>结果仅供娱乐</span>
+        </div>
+        <p id="home-error" class="inline-message" role="alert"></p>
         <div class="home-actions">
-          <button id="start-button" class="button button-primary" type="button">开始建档 <span aria-hidden="true">↗</span></button>
-          <button id="last-result-button" class="button button-quiet" type="button" hidden>查看上次结果</button>
+          <button id="start-button" class="button button-primary" type="button">开始鉴定 <span aria-hidden="true">→</span></button>
+          <button id="last-report-button" class="button button-secondary" type="button" hidden>查看上次报告</button>
         </div>
-        <div class="home-footnote"><span>OFFLINE / 7 QUESTIONS</span><span>仅供娱乐</span></div>
+        <p class="privacy-note">答案只留在本机，不收集姓名、公司或账号信息。</p>
       </section>
 
       <section id="quiz-screen" class="screen quiz-screen" aria-labelledby="question-title" hidden>
-        <div class="quiz-header">
+        <header class="quiz-header">
           <div>
-            <span class="eyebrow">现场记录</span>
-            <span id="progress-label" class="progress-label">01 / 07</span>
+            <p id="phase-label" class="eyebrow">基础画像 / BASE PROFILE</p>
+            <strong id="progress-label" class="progress-label">01 / 18+</strong>
           </div>
-          <span class="micro-label">单选 / SINGLE CHOICE</span>
-        </div>
-        <div class="progress-track" aria-hidden="true"><span id="progress-fill" class="progress-fill"></span></div>
-        <p id="question-title" class="question-title"></p>
-        <div id="option-list" class="option-list" role="radiogroup" aria-label="答题选项"></div>
-        <p id="quiz-message" class="inline-message" role="status" aria-live="polite"></p>
-        <div class="quiz-actions">
-          <button id="back-button" class="button button-back" type="button">返回</button>
-          <button id="next-button" class="button button-primary" type="button">继续 <span aria-hidden="true">→</span></button>
+          <span id="focus-label" class="focus-label">现场记录</span>
+        </header>
+        <div class="progress-track" aria-hidden="true"><span id="progress-fill"></span></div>
+        <article class="question-sheet">
+          <span id="question-number" class="question-number">Q.01</span>
+          <h2 id="question-title"></h2>
+          <div id="option-list" class="option-list" role="radiogroup" aria-label="答题选项" aria-describedby="quiz-message" tabindex="-1"></div>
+          <p id="quiz-message" class="inline-message" role="status" aria-live="polite"></p>
+        </article>
+        <div class="sticky-actions">
+          <button id="back-button" class="button button-ghost" type="button">← 返回</button>
+          <button id="next-button" class="button button-primary" type="button">继续 →</button>
         </div>
       </section>
 
-      <section id="result-screen" class="screen result-screen" aria-labelledby="result-name" hidden>
-        <div class="result-header">
-          <span class="eyebrow">体质鉴定单 / 已归档</span>
-          <span id="result-code" class="result-code">SPECIMEN / F-01</span>
-        </div>
-        <div id="result-accent" class="result-accent" aria-hidden="true"></div>
-        <p class="result-label">YOUR WORKPLACE TYPE</p>
-        <h2 id="result-name" class="result-name"></h2>
-        <p id="result-summary" class="result-summary"></p>
-        <blockquote id="result-quote" class="result-quote"></blockquote>
-        <p class="select-hint">长按选中这句，发给同事</p>
-        <div id="result-tags" class="tag-row" aria-label="结果标签"></div>
-        <p id="result-detail" class="result-detail"></p>
-        <div class="result-actions">
-          <button id="restart-button" class="button button-primary" type="button">再测一次 <span aria-hidden="true">↗</span></button>
-        </div>
-        <p class="result-footnote">结果仅供娱乐，不代表真实职业能力或人格判断</p>
+      <section id="transition-screen" class="screen transition-screen" aria-labelledby="transition-copy" hidden>
+        <div class="transition-mark" aria-hidden="true">///</div>
+        <p class="eyebrow">档案正在显影</p>
+        <h2 id="transition-copy">你已经暴露了一点工位本能。</h2>
+        <p id="transition-detail">没有标准答案，只有你更像哪一种求生方式。</p>
+        <button id="transition-button" class="button button-primary" type="button">继续追问 →</button>
+      </section>
+
+      <section id="report-screen" class="screen report-screen" aria-labelledby="result-name" hidden>
+        <header class="report-identity">
+          <div class="report-index">
+            <p class="eyebrow">体质鉴定单 / 已归档</p>
+            <span id="result-code">SPECIMEN / ----</span>
+          </div>
+          <canvas id="animal-stamp" class="animal-stamp" width="210" height="210" aria-label="结果动物印章"></canvas>
+          <div class="result-heading">
+            <p id="result-subtype" class="result-subtype"></p>
+            <h2 id="result-name"></h2>
+            <blockquote id="result-verdict"></blockquote>
+          </div>
+          <p id="result-overview" class="result-overview"></p>
+        </header>
+
+        <section class="report-section radar-section" aria-labelledby="radar-title">
+          <div class="section-heading"><span>01</span><h3 id="radar-title">九维职场画像</h3></div>
+          <canvas id="radar-canvas" class="radar-canvas" width="370" height="370" aria-label="九维职场倾向雷达图"></canvas>
+          <div id="dimension-list" class="dimension-list"></div>
+        </section>
+
+        <section class="report-section split-section">
+          <div>
+            <div class="section-heading"><span>02</span><h3>你的职场优势</h3></div>
+            <ol id="strength-list" class="report-list"></ol>
+          </div>
+          <div>
+            <div class="section-heading"><span>03</span><h3>你的职场雷区</h3></div>
+            <ol id="risk-list" class="report-list"></ol>
+          </div>
+        </section>
+
+        <section class="report-section action-section">
+          <div class="section-heading"><span>04</span><h3>本周行动建议</h3></div>
+          <ol id="action-list" class="report-list"></ol>
+        </section>
+
+        <section class="report-section work-section">
+          <div class="section-heading"><span>05</span><h3>适合你的工作模式</h3></div>
+          <p id="work-mode"></p>
+          <div class="warning-note"><span>STOP-LOSS NOTE</span><p id="warning-copy"></p></div>
+          <p class="secondary-copy">第二相似体质：<strong id="secondary-type"></strong><br><span id="secondary-difference"></span></p>
+        </section>
+
+        <section class="report-actions" aria-label="保存和发布">
+          <p class="eyebrow">把你的动物档案带走</p>
+          <div class="action-grid">
+            <button id="save-image-button" class="button button-primary" type="button">保存高清报告</button>
+            <button id="publish-note-button" class="button button-red" type="button">发小红书笔记</button>
+            <button id="preview-report-button" class="button button-secondary" type="button">预览长图</button>
+            <button id="restart-button" class="button button-ghost" type="button">重新鉴定</button>
+          </div>
+          <p id="export-status" class="export-status" role="status" aria-live="polite"></p>
+        </section>
+        <p class="disclaimer">本结果用于娱乐、自我观察与朋友讨论，不用于心理诊断、招聘筛选、绩效判断或职业定论。</p>
       </section>
     </main>
 
-    <footer class="app-footer"><span>班味鉴定所</span><span>NO DATA LEAVES THIS TOOL</span></footer>
+    <footer class="footer"><span>OFFLINE / LOCAL ONLY</span><span>© 班味鉴定所</span></footer>
   </div>
 
+  <div id="export-preview" class="export-preview" role="dialog" aria-modal="true" aria-label="高清报告预览" hidden>
+    <button id="close-preview-button" class="preview-close" type="button" aria-label="关闭预览">×</button>
+    <div class="preview-scroll"><img id="export-preview-image" alt="完整体质报告预览"></div>
+    <canvas id="export-canvas" width="1080" height="2400" hidden></canvas>
+  </div>
+
+  <script src="./dimensions.js"></script>
   <script src="./questions.js"></script>
-  <script src="./types.js"></script>
-  <script src="./quiz-core.js"></script>
+  <script src="./archetypes.js"></script>
+  <script src="./animals.js"></script>
+  <script src="./assessment-engine.js"></script>
+  <script src="./radar-renderer.js"></script>
+  <script src="./report-renderer.js"></script>
+  <script src="./exporter.js"></script>
   <script src="./main.js"></script>
 </body>
 </html>

@@ -1,169 +1,231 @@
 (function (root, doc) {
-  const data = root.DagongrenMiniToolData;
-  const core = root.DagongrenMiniTool;
-  const STORAGE_KEY = 'dagongren-mini-tool-last-result';
-  const state = { mode: 'home', currentIndex: 0, answers: [], selectedIndex: -1, result: null };
+  const data = root.DagongrenAssessmentData;
+  const engine = root.DagongrenAssessmentEngine;
+  const SESSION_KEY = 'office-vibe-assessment-session-v2';
+  const REPORT_KEY = 'office-vibe-assessment-report-v2';
+  const anchorIds = data.questions.filter((question) => question.stage === 'anchor').map((question) => question.id);
+  const questionById = Object.fromEntries(data.questions.map((question) => [question.id, question]));
+  let generatedImage = null;
+  let previewOpener = null;
+  let pendingIndex = 0;
+  const state = { mode: 'home', index: 0, route: anchorIds.slice(), answers: {}, report: null };
 
   function byId(id) { return doc.getElementById(id); }
+  function setText(id, text) { byId(id).textContent = text || ''; }
+  function scrollTop() { try { root.scrollTo({ top: 0, behavior: 'auto' }); } catch (error) { root.scrollTo(0, 0); } }
+  function getBridge() { return window.xhs && window.xhs.miniTool ? window.xhs.miniTool : null; }
 
-  function getStoredResult() {
-    try {
-      const raw = root.localStorage.getItem(STORAGE_KEY);
-      if (!raw) return null;
-      const saved = JSON.parse(raw);
-      const type = data.types.find((item) => item.id === saved.id);
-      return type ? core.getResultVariant(type, saved.variantIndex) : null;
-    } catch (error) {
-      return null;
-    }
+  function safeRead(key) {
+    try { const raw = root.localStorage.getItem(key); return raw ? JSON.parse(raw) : null; } catch (error) { return null; }
+  }
+  function safeWrite(key, value) { try { root.localStorage.setItem(key, JSON.stringify(value)); return true; } catch (error) { return false; } }
+  function safeRemove(key) { try { root.localStorage.removeItem(key); } catch (error) { /* 当前流程仍可继续。 */ } }
+
+  function validReport(report) {
+    return engine.isValidReportSnapshot(report, data);
+  }
+  function validSession(session) {
+    return engine.isValidSessionSnapshot(session, data);
   }
 
-  function saveResult(result) {
-    try {
-      root.localStorage.setItem(STORAGE_KEY, JSON.stringify({ id: result.id, variantIndex: result.variantIndex }));
-    } catch (error) {
-      // 本地缓存不可用时，当前测试仍然可以完成。
-    }
+  function persistSession() {
+    safeWrite(SESSION_KEY, { version: data.version, index: state.index, route: state.route, answers: state.answers });
+  }
+  function clearAdaptiveAnswers() {
+    Object.keys(state.answers).forEach((id) => { if (!anchorIds.includes(id)) delete state.answers[id]; });
+    state.route = anchorIds.slice();
   }
 
-  function setMessage(text) {
-    byId('quiz-message').textContent = text || '';
-  }
-
-  function setScreen(screenId) {
-    ['home-screen', 'quiz-screen', 'result-screen'].forEach((id) => {
-      byId(id).hidden = id !== screenId;
-    });
+  function setScreen(id) {
+    ['home-screen', 'quiz-screen', 'transition-screen', 'report-screen'].forEach((screenId) => { byId(screenId).hidden = screenId !== id; });
+    state.mode = id.replace('-screen', '');
+    scrollTop();
   }
 
   function renderHome() {
     setScreen('home-screen');
-    const hasLastResult = Boolean(getStoredResult());
-    byId('last-result-button').hidden = !hasLastResult;
+    const cachedReport = safeRead(REPORT_KEY);
+    if (cachedReport && !validReport(cachedReport)) safeRemove(REPORT_KEY);
+    byId('last-report-button').hidden = !validReport(cachedReport);
+    root.DagongrenAnimals.renderCanvas(byId('home-stamp'), 'CAPY', { size: 210, color: '#E8513D', paper: '#F3F0E8' });
   }
 
-  function renderQuiz() {
-    setScreen('quiz-screen');
-    const question = data.questions[state.currentIndex];
-    const selectedOptionId = state.answers[state.currentIndex] || '';
-    state.selectedIndex = question.options.findIndex((option) => option.id === selectedOptionId);
-    byId('progress-label').textContent = core.formatProgress(state.currentIndex, data.questions.length);
-    byId('progress-fill').style.width = `${core.formatProgressPercent(state.currentIndex, data.questions.length)}%`;
-    byId('question-title').textContent = question.title;
-    byId('next-button').innerHTML = state.currentIndex === data.questions.length - 1 ? '生成结果 <span aria-hidden="true">↗</span>' : '继续 <span aria-hidden="true">→</span>';
+  function renderOptions(question) {
     const list = byId('option-list');
     list.replaceChildren();
     question.options.forEach((option, index) => {
       const button = doc.createElement('button');
       const marker = doc.createElement('span');
       const copy = doc.createElement('span');
-      button.type = 'button';
-      button.className = 'option-button';
-      button.setAttribute('role', 'radio');
-      button.setAttribute('aria-checked', String(index === state.selectedIndex));
-      marker.className = 'option-index';
-      marker.textContent = String.fromCharCode(65 + index);
-      copy.className = 'option-copy';
-      copy.textContent = option.text;
+      button.type = 'button'; button.className = 'option-button'; button.setAttribute('role', 'radio');
+      button.setAttribute('aria-checked', String(state.answers[question.id] === option.id));
+      marker.className = 'option-index'; marker.textContent = String.fromCharCode(65 + index);
+      copy.className = 'option-copy'; copy.textContent = option.text;
       button.append(marker, copy);
-      button.addEventListener('click', () => selectOption(index));
+      button.addEventListener('click', () => selectOption(option.id));
       list.append(button);
     });
   }
 
-  function renderResult() {
-    setScreen('result-screen');
-    const result = state.result;
-    byId('result-code').textContent = `SPECIMEN / ${result.code}`;
-    byId('result-name').textContent = result.name;
-    byId('result-summary').textContent = result.summary;
-    byId('result-quote').textContent = result.quote;
-    byId('result-detail').textContent = result.detail;
-    byId('result-accent').style.setProperty('--result-color', result.color);
-    byId('result-quote').style.setProperty('--result-color', result.color);
-    const tags = byId('result-tags');
-    tags.replaceChildren();
-    result.tags.forEach((tagText) => {
-      const tag = doc.createElement('span');
-      tag.className = 'tag';
-      tag.textContent = tagText;
-      tags.append(tag);
-    });
+  function renderQuiz() {
+    setScreen('quiz-screen');
+    const question = questionById[state.route[state.index]];
+    const totalLabel = state.route.length > 12 ? state.route.length : '18+';
+    byId('quiz-screen').dataset.questionId = question.id;
+    setText('phase-label', state.index < 12 ? '基础画像 / BASE PROFILE' : '定向深挖 / TARGETED PATH');
+    setText('progress-label', `${String(state.index + 1).padStart(2, '0')} / ${totalLabel}`);
+    setText('question-number', `Q.${String(state.index + 1).padStart(2, '0')}`);
+    setText('focus-label', data.dimensions.find((dimension) => dimension.id === question.focus).name);
+    setText('question-title', question.scene);
+    setText('quiz-message', '');
+    byId('progress-fill').style.width = `${Math.round(((state.index + 1) / (state.route.length > 12 ? state.route.length : 18)) * 100)}%`;
+    setText('next-button', state.index === state.route.length - 1 ? '生成报告 →' : '继续 →');
+    renderOptions(question);
   }
 
-  function render() {
-    setMessage('');
-    if (state.mode === 'quiz') renderQuiz();
-    else if (state.mode === 'result') renderResult();
-    else renderHome();
+  function selectOption(optionId) {
+    const question = questionById[state.route[state.index]];
+    if (!question.options.some((option) => option.id === optionId)) return;
+    const previous = state.answers[question.id];
+    state.answers[question.id] = optionId;
+    if (question.stage === 'anchor' && previous && previous !== optionId && state.route.length > 12) clearAdaptiveAnswers();
+    persistSession();
+    renderOptions(question);
+    setText('quiz-message', '');
   }
 
-  function startQuiz() {
-    state.mode = 'quiz';
-    state.currentIndex = 0;
-    state.answers = [];
-    state.selectedIndex = -1;
-    state.result = null;
-    render();
+  function showTransition(copy, detail, nextIndex) {
+    pendingIndex = nextIndex;
+    setText('transition-copy', copy);
+    setText('transition-detail', detail);
+    setScreen('transition-screen');
   }
 
-  function selectOption(index) {
-    const question = data.questions[state.currentIndex];
-    const option = question.options[index];
-    if (!option) return;
-    state.answers[state.currentIndex] = option.id;
-    state.selectedIndex = index;
-    setMessage('');
-    renderQuiz();
+  function completeAssessment() {
+    state.report = engine.createReport(state.answers, state.route, data);
+    safeWrite(REPORT_KEY, state.report);
+    safeRemove(SESSION_KEY);
+    generatedImage = null;
+    renderReport();
   }
 
   function nextQuestion() {
-    const question = data.questions[state.currentIndex];
-    const selectedOption = question.options[state.selectedIndex];
-    if (!selectedOption || state.answers[state.currentIndex] !== selectedOption.id) {
-      setMessage('先选一个，再继续。');
+    const question = questionById[state.route[state.index]];
+    if (!state.answers[question.id]) { setText('quiz-message', '先选一个真实反应，再继续。'); byId('option-list').focus(); return; }
+    if (state.index === 11 && state.route.length === 12) {
+      try { state.route = engine.buildAdaptiveRoute(state.answers, data); } catch (error) { setText('quiz-message', '动态路径生成失败，请返回检查答案。'); return; }
+      persistSession();
+      showTransition('基础画像完成，接下来只追问最像你的部分。', `你的后续路径已缩小到 ${state.route.length - 12} 道定向场景。`, 12);
       return;
     }
-    if (state.currentIndex === data.questions.length - 1) {
-      state.result = core.calculateResult(state.answers, data.questions, data.types);
-      saveResult(state.result);
-      state.mode = 'result';
-      render();
-      return;
-    }
-    state.currentIndex += 1;
-    renderQuiz();
+    if (state.index === state.route.length - 1) { completeAssessment(); return; }
+    const nextIndex = state.index + 1;
+    if (nextIndex === 4) { showTransition('你已经暴露了一点工位本能。', '没有标准答案，只有你在真实压力下更常用哪种方式。', nextIndex); return; }
+    if (nextIndex === 8) { showTransition('系统正在判断：你是真松弛，还是累到不想动。', '再看四个场景，基础画像就会显影。', nextIndex); return; }
+    state.index = nextIndex; persistSession(); renderQuiz();
   }
+
+  function continueAfterTransition() { state.index = pendingIndex; persistSession(); renderQuiz(); }
 
   function previousQuestion() {
-    if (state.currentIndex === 0) {
-      state.mode = 'home';
-      render();
-      return;
-    }
-    state.currentIndex -= 1;
-    renderQuiz();
+    if (state.index === 0) { renderHome(); return; }
+    state.index -= 1; persistSession(); renderQuiz();
   }
 
-  function showLastResult() {
-    const result = getStoredResult();
-    if (!result) return;
-    state.result = result;
-    state.mode = 'result';
-    render();
+  function startAssessment() {
+    state.index = 0; state.route = anchorIds.slice(); state.answers = {}; state.report = null; generatedImage = null;
+    persistSession(); renderQuiz();
+  }
+
+  function renderReport() {
+    if (!validReport(state.report)) { renderHome(); return; }
+    setScreen('report-screen');
+    root.DagongrenReportRenderer.renderReport(doc, state.report);
+    setText('export-status', '');
+  }
+
+  function showLastReport() {
+    const report = safeRead(REPORT_KEY);
+    if (!validReport(report)) { byId('last-report-button').hidden = true; return; }
+    state.report = report; renderReport();
+  }
+
+  function getGeneratedImage() {
+    if (!generatedImage) generatedImage = root.DagongrenExporter.createReportImage(state.report, data, doc);
+    return generatedImage;
+  }
+
+  function setExportBusy(isBusy) {
+    ['save-image-button', 'publish-note-button', 'preview-report-button'].forEach((id) => { byId(id).disabled = isBusy; });
+  }
+
+  async function saveImage() {
+    setExportBusy(true); setText('export-status', '正在生成 1080 × 2400 高清报告…');
+    try {
+      const image = getGeneratedImage();
+      await root.DagongrenExporter.saveToAlbum(image.dataUri, getBridge());
+      setText('export-status', '已保存到系统相册。');
+    } catch (error) {
+      setText('export-status', error && error.message ? error.message : '保存失败，请稍后重试。');
+      showPreview();
+    } finally { setExportBusy(false); }
+  }
+
+  async function publishNote() {
+    setExportBusy(true); setText('export-status', '正在整理笔记封面和文案…');
+    try {
+      const image = getGeneratedImage();
+      await root.DagongrenExporter.publishNote(image.dataUri, state.report, getBridge());
+      setText('export-status', '已打开笔记发布页，最终发布由你确认。');
+    } catch (error) { setText('export-status', error && error.message ? error.message : '发布失败，请稍后重试。'); }
+    finally { setExportBusy(false); }
+  }
+
+  function showPreview() {
+    try {
+      const image = getGeneratedImage();
+      previewOpener = doc.activeElement;
+      byId('export-preview-image').src = image.dataUri;
+      byId('export-preview').hidden = false;
+      byId('close-preview-button').focus();
+    } catch (error) { setText('export-status', error && error.message ? error.message : '报告预览生成失败。'); }
+  }
+  function closePreview() {
+    byId('export-preview').hidden = true;
+    const target = previewOpener && previewOpener.isConnected ? previewOpener : byId('preview-report-button');
+    previewOpener = null;
+    target.focus();
+  }
+  function handlePreviewKeydown(event) {
+    if (byId('export-preview').hidden) return;
+    if (event.key === 'Escape') { event.preventDefault(); closePreview(); }
+    else if (event.key === 'Tab') { event.preventDefault(); byId('close-preview-button').focus(); }
+  }
+
+  function restoreSession() {
+    const session = safeRead(SESSION_KEY);
+    if (!validSession(session)) { if (session) safeRemove(SESSION_KEY); return false; }
+    state.index = session.index; state.route = session.route; state.answers = session.answers; renderQuiz(); return true;
   }
 
   function init() {
-    core.validateQuestionBank(data.questions, data.types);
-    byId('start-button').addEventListener('click', startQuiz);
-    byId('last-result-button').addEventListener('click', showLastResult);
+    try { engine.validateAssessmentData(data); } catch (error) {
+      renderHome(); setText('home-error', `档案数据损坏，请重新打开。错误码：DATA-${String(error.message).length}`); byId('start-button').disabled = true; return;
+    }
+    byId('start-button').addEventListener('click', startAssessment);
+    byId('last-report-button').addEventListener('click', showLastReport);
     byId('back-button').addEventListener('click', previousQuestion);
     byId('next-button').addEventListener('click', nextQuestion);
-    byId('restart-button').addEventListener('click', startQuiz);
-    render();
+    byId('transition-button').addEventListener('click', continueAfterTransition);
+    byId('save-image-button').addEventListener('click', saveImage);
+    byId('publish-note-button').addEventListener('click', publishNote);
+    byId('preview-report-button').addEventListener('click', showPreview);
+    byId('close-preview-button').addEventListener('click', closePreview);
+    doc.addEventListener('keydown', handlePreviewKeydown);
+    byId('restart-button').addEventListener('click', startAssessment);
+    if (!restoreSession()) renderHome();
   }
 
-  root.DagongrenMiniToolApp = { init, nextQuestion, previousQuestion, selectOption, startQuiz };
-  if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', init, { once: true });
-  else init();
+  root.DagongrenMiniToolApp = { init, nextQuestion, previousQuestion, selectOption, startAssessment };
+  if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', init, { once: true }); else init();
 })(window, document);
