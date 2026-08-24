@@ -52,6 +52,8 @@ def main() -> None:
         assert "18–21 题动态路径" in page.locator(".home-meta").inner_text()
         page.screenshot(path="D:/Temp/dagongren-v2-home.png", full_page=True)
 
+        page.locator("#industry-options .context-chip").filter(has_text="教育 / 科研").click()
+        page.locator("#role-options .context-chip").filter(has_text="创作 / 研究").click()
         page.locator("#start-button").click()
         assert page.locator("#progress-label").inner_text() == "01 / 18+"
         page.locator("#next-button").click()
@@ -90,6 +92,8 @@ def main() -> None:
         assert page.locator("#risk-list li").count() == 3
         assert page.locator("#action-list li").count() == 3
         assert page.locator("#secondary-difference").inner_text()
+        assert "教育 / 科研" in page.locator("#result-context").inner_text()
+        assert "创作 / 研究" in page.locator("#result-context").inner_text()
         assert page.locator("#radar-canvas").evaluate("canvas => canvas.width > 0 && canvas.height > 0")
         page.screenshot(path="D:/Temp/dagongren-v2-report.png", full_page=True)
 

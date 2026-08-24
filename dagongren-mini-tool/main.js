@@ -1,6 +1,8 @@
 (function (root, doc) {
   const data = root.DagongrenAssessmentData;
   const engine = root.DagongrenAssessmentEngine;
+  const contextApi = root.DagongrenContext;
+  const transitions = root.DagongrenTransitions;
   const SESSION_KEY = 'office-vibe-assessment-session-v2';
   const REPORT_KEY = 'office-vibe-assessment-report-v2';
   const anchorIds = data.questions.filter((question) => question.stage === 'anchor').map((question) => question.id);
@@ -8,7 +10,7 @@
   let generatedImage = null;
   let previewOpener = null;
   let pendingIndex = 0;
-  const state = { mode: 'home', index: 0, route: anchorIds.slice(), answers: {}, report: null };
+  const state = { mode: 'home', index: 0, route: anchorIds.slice(), answers: {}, report: null, context: contextApi.normalize(null) };
 
   function byId(id) { return doc.getElementById(id); }
   function setText(id, text) { byId(id).textContent = text || ''; }
@@ -29,7 +31,7 @@
   }
 
   function persistSession() {
-    safeWrite(SESSION_KEY, { version: data.version, index: state.index, route: state.route, answers: state.answers });
+    safeWrite(SESSION_KEY, { version: data.version, index: state.index, route: state.route, answers: state.answers, context: state.context });
   }
   function clearAdaptiveAnswers() {
     Object.keys(state.answers).forEach((id) => { if (!anchorIds.includes(id)) delete state.answers[id]; });
@@ -42,8 +44,31 @@
     scrollTop();
   }
 
+  function renderContextPicker() {
+    const renderGroup = (containerId, items, key) => {
+      const list = byId(containerId);
+      list.replaceChildren();
+      items.forEach((item) => {
+        const button = doc.createElement('button');
+        button.type = 'button';
+        button.className = 'context-chip';
+        button.setAttribute('role', 'radio');
+        button.setAttribute('aria-checked', String(state.context[key] === item.id));
+        button.textContent = item.label;
+        button.addEventListener('click', () => {
+          state.context = contextApi.normalize({ ...state.context, [key]: item.id });
+          renderContextPicker();
+        });
+        list.append(button);
+      });
+    };
+    renderGroup('industry-options', contextApi.industries, 'industryId');
+    renderGroup('role-options', contextApi.roles, 'roleId');
+  }
+
   function renderHome() {
     setScreen('home-screen');
+    renderContextPicker();
     const cachedReport = safeRead(REPORT_KEY);
     if (cachedReport && !validReport(cachedReport)) safeRemove(REPORT_KEY);
     byId('last-report-button').hidden = !validReport(cachedReport);
@@ -60,7 +85,7 @@
       button.type = 'button'; button.className = 'option-button'; button.setAttribute('role', 'radio');
       button.setAttribute('aria-checked', String(state.answers[question.id] === option.id));
       marker.className = 'option-index'; marker.textContent = String.fromCharCode(65 + index);
-      copy.className = 'option-copy'; copy.textContent = option.text;
+      copy.className = 'option-copy'; copy.textContent = contextApi.adaptScene(option.text, state.context);
       button.append(marker, copy);
       button.addEventListener('click', () => selectOption(option.id));
       list.append(button);
@@ -76,7 +101,7 @@
     setText('progress-label', `${String(state.index + 1).padStart(2, '0')} / ${totalLabel}`);
     setText('question-number', `Q.${String(state.index + 1).padStart(2, '0')}`);
     setText('focus-label', data.dimensions.find((dimension) => dimension.id === question.focus).name);
-    setText('question-title', question.scene);
+    setText('question-title', contextApi.adaptScene(question.scene, state.context));
     setText('quiz-message', '');
     byId('progress-fill').style.width = `${Math.round(((state.index + 1) / (state.route.length > 12 ? state.route.length : 18)) * 100)}%`;
     setText('next-button', state.index === state.route.length - 1 ? '生成报告 →' : '继续 →');
@@ -94,15 +119,16 @@
     setText('quiz-message', '');
   }
 
-  function showTransition(copy, detail, nextIndex) {
+  function showTransition(nextIndex, focus, stage) {
     pendingIndex = nextIndex;
-    setText('transition-copy', copy);
-    setText('transition-detail', detail);
+    const copy = transitions.pick({ stage: stage || 'anchor', index: nextIndex, focus, context: state.context });
+    setText('transition-copy', copy.headline);
+    setText('transition-detail', copy.detail);
     setScreen('transition-screen');
   }
 
   function completeAssessment() {
-    state.report = engine.createReport(state.answers, state.route, data);
+    state.report = engine.createReport(state.answers, state.route, data, state.context);
     safeWrite(REPORT_KEY, state.report);
     safeRemove(SESSION_KEY);
     generatedImage = null;
@@ -115,13 +141,12 @@
     if (state.index === 11 && state.route.length === 12) {
       try { state.route = engine.buildAdaptiveRoute(state.answers, data); } catch (error) { setText('quiz-message', '动态路径生成失败，请返回检查答案。'); return; }
       persistSession();
-      showTransition('基础画像完成，接下来只追问最像你的部分。', `你的后续路径已缩小到 ${state.route.length - 12} 道定向场景。`, 12);
+      showTransition(12, question.focus, 'branch');
       return;
     }
     if (state.index === state.route.length - 1) { completeAssessment(); return; }
     const nextIndex = state.index + 1;
-    if (nextIndex === 4) { showTransition('你已经暴露了一点工位本能。', '没有标准答案，只有你在真实压力下更常用哪种方式。', nextIndex); return; }
-    if (nextIndex === 8) { showTransition('系统正在判断：你是真松弛，还是累到不想动。', '再看四个场景，基础画像就会显影。', nextIndex); return; }
+    if (nextIndex === 4 || nextIndex === 8) { showTransition(nextIndex, question.focus, 'anchor'); return; }
     state.index = nextIndex; persistSession(); renderQuiz();
   }
 
@@ -133,6 +158,7 @@
   }
 
   function startAssessment() {
+    state.context = contextApi.normalize(state.context);
     state.index = 0; state.route = anchorIds.slice(); state.answers = {}; state.report = null; generatedImage = null;
     persistSession(); renderQuiz();
   }
@@ -205,7 +231,7 @@
   function restoreSession() {
     const session = safeRead(SESSION_KEY);
     if (!validSession(session)) { if (session) safeRemove(SESSION_KEY); return false; }
-    state.index = session.index; state.route = session.route; state.answers = session.answers; renderQuiz(); return true;
+    state.index = session.index; state.route = session.route; state.answers = session.answers; state.context = contextApi.normalize(session.context); renderQuiz(); return true;
   }
 
   function init() {
@@ -213,6 +239,7 @@
       renderHome(); setText('home-error', `档案数据损坏，请重新打开。错误码：DATA-${String(error.message).length}`); byId('start-button').disabled = true; return;
     }
     byId('start-button').addEventListener('click', startAssessment);
+    byId('context-skip-button').addEventListener('click', () => { state.context = contextApi.normalize(null); startAssessment(); });
     byId('last-report-button').addEventListener('click', showLastReport);
     byId('back-button').addEventListener('click', previousQuestion);
     byId('next-button').addEventListener('click', nextQuestion);

@@ -23,18 +23,24 @@
 - 完整报告包含体质总览、九维雷达图、优势、雷区、行动建议、工作模式、止损提醒和第二相似体质
 - 生成 1080×2400、非透明背景的高清社交长图
 - 使用小红书官方 `writeTempFile → saveImageToPhotosAlbum` 保存相册，使用 `postNote` 打开图文笔记发布页
+- 答题前可选择行业与岗位；不选择时进入跨行业通用模式，语境只影响少量题干和报告文案，不参与分数
 - 页面刷新可恢复未完成答题，完成后只缓存最近一份报告；不收集姓名、公司、账号等身份信息
+
+### 全行业语境升级
+
+首页提供 9 个行业大类和 7 个岗位类型。题库底层仍是同一套九维度通用模型，但会把少量“任务、负责人、交付、协作”等场景词替换成教育、服务、工程、金融等更有现场感的表达，避免整套题目默认站在互联网/产品经理视角。行业和岗位选择会显示在报告顶部，也会参与分享文案生成；用户可以随时选择“先不标注”。
 
 ## 测评逻辑
 
 ### 动态路径
 
-1. 用户先完成 12 道基础画像题。
-2. 引擎计算九维临时得分、证据数和答题一致性。
-3. 选择偏离中位值最大的三个维度，每个维度确定性抽取两道深挖题。
-4. 同一维度同时出现明显正负极端反应时，追加 0–2 道校准题。
-5. 特定组合满足证据条件时，追加 0–1 道隐藏题。
-6. 最终路径为 `12 + 6 + 0–2 + 0–1 = 18–21` 题，无随机数、无循环、无重复题。
+1. 用户先选择行业/岗位，或跳过进入跨行业通用模式。
+2. 用户完成 12 道基础画像题。
+3. 引擎计算九维临时得分、证据数和答题一致性。
+4. 选择偏离中位值最大的三个维度，每个维度确定性抽取两道深挖题。
+5. 同一维度同时出现明显正负极端反应时，追加 0–2 道校准题。
+6. 特定组合满足证据条件时，追加 0–1 道隐藏题。
+7. 最终路径为 `12 + 6 + 0–2 + 0–1 = 18–21` 题，无随机数、无循环、无重复题。
 
 返回修改锚点答案时，尚未作答的旧分支会被清除并重新计算，防止旧路径污染新结果。
 
@@ -53,8 +59,8 @@ score = (chosenSum - minPossibleSum) / (maxPossibleSum - minPossibleSum) × 100
 视觉概念是“职场动物观察所”：
 
 - 档案白、复写蓝、检验红、荧光便签构成纸质检材系统
-- 标题使用系统宋体，正文使用系统黑体，编号和分数使用等宽字体
-- 动物不是 Emoji 或通用 AI 插画，而是由本地 Canvas 生成的原创橡皮章线刻符号
+- 标题使用思源宋体/得意黑/系统衬线回退，正文使用思源黑体/系统无衬线回退，编号和分数使用等宽字体；不嵌入全量字体，不依赖 CDN
+- 动物不是 Emoji 或通用 AI 插画，而是由本地 Canvas 生成的原创手绘档案印章：轮廓、错位复印线、阴影、纹理和动物特征都由结果 code 稳定决定
 - 页面报告与导出长图共享同一套动物、维度颜色和档案语言
 - 支持 360/390/430px 移动宽度、键盘焦点、安全区和 `prefers-reduced-motion`
 
@@ -67,11 +73,13 @@ score = (chosenSum - minPossibleSum) / (maxPossibleSum - minPossibleSum) × 100
 ```text
 index.html
 style.css
+context.js
 dimensions.js
 questions.js
 archetypes.js
 animals.js
 assessment-engine.js
+transition-copy.js
 radar-renderer.js
 report-renderer.js
 exporter.js
@@ -104,7 +112,7 @@ python -m http.server 4174 --bind 127.0.0.1 --directory dagongren-mini-tool
 核心逻辑与平台契约：
 
 ```powershell
-node --test tests/dagongren/assessment-engine.test.js tests/dagongren/exporter.test.js tests/dagongren/renderers.test.js tests/dagongren/mini-tool.test.js
+node --test tests/dagongren/assessment-engine.test.js tests/dagongren/context.test.js tests/dagongren/exporter.test.js tests/dagongren/renderers.test.js tests/dagongren/mini-tool.test.js
 ```
 
 其中包含 100,000 条确定性路径模拟，会验证：
@@ -121,7 +129,7 @@ $env:MINI_TOOL_PORT = '4174'
 python tests/dagongren/mini-tool.browser.py
 ```
 
-浏览器测试覆盖首页、漏答拦截、返回保留、三次过渡、动态路径、完整报告、雷达图、1080×2400 图片、最近报告恢复、360/390/430px 响应式、控制台错误和外部请求。
+浏览器测试覆盖首页行业/岗位选择、漏答拦截、返回保留、动态过渡、动态路径、完整报告语境回显、雷达图、1080×2400 图片、最近报告恢复、360/390/430px 响应式、控制台错误和外部请求。
 
 原生 XHSML 小组件仍保留在 `dagongren-tizhi-widget/`，它是历史版本，与本次发布后台要求的离线 H5 ZIP 不是同一种格式，本次重构没有修改它。
 
@@ -138,3 +146,4 @@ python tests/dagongren/mini-tool.browser.py
 
 - `docs/superpowers/specs/2026-08-23-dagongren-assessment-rebuild-design.md`
 - `docs/superpowers/plans/2026-08-23-dagongren-assessment-rebuild-implementation-plan.md`
+- `docs/superpowers/specs/2026-08-24-dagongren-universal-context-design.md`

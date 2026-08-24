@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '../../dagongren-mini-tool');
 function loadRuntime() {
   const sandbox = { window: {}, console };
   sandbox.globalThis = sandbox.window;
-  ['dimensions.js', 'questions.js', 'archetypes.js', 'assessment-engine.js'].forEach((file) => {
+  ['context.js', 'dimensions.js', 'questions.js', 'archetypes.js', 'assessment-engine.js'].forEach((file) => {
     vm.runInNewContext(fs.readFileSync(path.join(root, file), 'utf8'), sandbox, { filename: file });
   });
   return sandbox.window;
@@ -124,6 +124,21 @@ test('creates a stable complete report and rebuilds unanswered branches after an
   const rebuilt = engine.rebuildAfterAnchorEdit(changed, firstRoute, data);
   assert.equal(Object.keys(rebuilt.answers).sort().join('|'), firstRoute.slice(0, 12).sort().join('|'));
   assert.deepEqual(rebuilt.route, engine.buildAdaptiveRoute(rebuilt.answers, data));
+});
+
+test('keeps selected workplace context in the report and expands its share copy', () => {
+  const { DagongrenAssessmentData: data, DagongrenAssessmentEngine: engine } = loadRuntime();
+  const context = { industryId: 'education', roleId: 'research' };
+  const answers = anchorAnswers(data, 1);
+  const route = engine.buildAdaptiveRoute(answers, data);
+  route.slice(12).forEach((id, index) => {
+    const question = data.questions.find((item) => item.id === id);
+    answers[id] = question.options[index % 4].id;
+  });
+  const report = engine.createReport(answers, route, data, context);
+  assert.deepEqual({ ...report.context }, context);
+  assert.match(report.shareContent, /教育|研究/);
+  assert.ok(report.shareContent.length > 100);
 });
 
 test('rejects corrupted session and report snapshots instead of restoring a broken screen', () => {

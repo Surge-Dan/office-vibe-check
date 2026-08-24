@@ -257,9 +257,12 @@
     return `${poles[dimension.id][scores[dimension.id] >= 50 ? 1 : 0]}特化型`;
   }
 
-  function createReport(answers, route, data) {
+  function createReport(answers, route, data, workplaceContext) {
     validateAssessmentData(data);
     assert(Array.isArray(route) && route.length >= 18 && route.length <= 21 && new Set(route).size === route.length, '动态路径无效');
+    const contextApi = root.DagongrenContext;
+    const context = contextApi ? contextApi.normalize(workplaceContext) : { industryId: 'general', roleId: 'general' };
+    const labels = contextApi ? contextApi.getLabels(context) : { industryShort: '跨行业通用', roleShort: '通用岗位' };
     const scored = scoreAnswers(answers, route, data);
     const matched = matchArchetype(scored.scores, scored.confidence, answers, data, scored.evidence);
     const primary = matched.primary;
@@ -273,6 +276,12 @@
       color: dimension.color,
     }));
     const signature = hashAnswers(answers, route).toString(16).toUpperCase().padStart(8, '0').slice(0, 8);
+    const shareContent = [
+      `${primary.shareContent || primary.verdict}`,
+      `在${labels.industryShort}的${labels.roleShort}现场，你更容易表现为：${primary.overview}`,
+      `说到底，我不是突然变成这样，只是每天都在用同一套方式，把自己送到下班。`,
+      `#打工人体质 #班味鉴定所 #职场动物观察`,
+    ].join('\n');
     return {
       version: data.version,
       signature,
@@ -290,6 +299,7 @@
       actions: primary.actions.slice(),
       workMode: primary.workMode,
       warning: primary.warning,
+      context,
       secondary: {
         id: matched.secondary.id,
         name: matched.secondary.name,
@@ -305,7 +315,7 @@
       confidence: scored.confidence,
       dimensions,
       shareTitle: primary.shareTitle,
-      shareContent: primary.shareContent,
+      shareContent,
     };
   }
 
@@ -319,6 +329,10 @@
   function isValidSessionSnapshot(session, data) {
     try {
       if (!session || session.version !== data.version || !Number.isInteger(session.index) || !Array.isArray(session.route) || !session.answers || typeof session.answers !== 'object') return false;
+      if (session.context && root.DagongrenContext) {
+        const normalizedContext = root.DagongrenContext.normalize(session.context);
+        if (normalizedContext.industryId !== session.context.industryId || normalizedContext.roleId !== session.context.roleId) return false;
+      }
       if (![12, 18, 19, 20, 21].includes(session.route.length) || session.index < 0 || session.index >= session.route.length || new Set(session.route).size !== session.route.length) return false;
       const anchors = getDataIndex(data).anchors.map((question) => question.id);
       if (session.route.slice(0, 12).join('|') !== anchors.join('|')) return false;
@@ -336,6 +350,10 @@
   function isValidReportSnapshot(report, data) {
     try {
       if (!report || report.version !== data.version || !data.archetypes.some((type) => type.id === report.primaryId)) return false;
+      if (report.context && root.DagongrenContext) {
+        const normalizedContext = root.DagongrenContext.normalize(report.context);
+        if (normalizedContext.industryId !== report.context.industryId || normalizedContext.roleId !== report.context.roleId) return false;
+      }
       if (!report.secondary || !data.archetypes.some((type) => type.id === report.secondary.id) || !Array.isArray(report.secondary.differences) || report.secondary.differences.length !== 2) return false;
       if (!Array.isArray(report.dimensions) || report.dimensions.length !== 9 || !report.scores || !report.confidence) return false;
       if (!data.dimensions.every((dimension) => Number.isFinite(report.scores[dimension.id]) && report.scores[dimension.id] >= 0 && report.scores[dimension.id] <= 100 && Number.isFinite(report.confidence[dimension.id]) && report.confidence[dimension.id] > 0 && report.confidence[dimension.id] <= 1)) return false;

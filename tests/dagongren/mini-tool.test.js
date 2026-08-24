@@ -8,11 +8,13 @@ const projectRoot = path.resolve(__dirname, '../../dagongren-mini-tool');
 const expectedFiles = [
   'index.html',
   'style.css',
+  'context.js',
   'dimensions.js',
   'questions.js',
   'archetypes.js',
   'animals.js',
   'assessment-engine.js',
+  'transition-copy.js',
   'radar-renderer.js',
   'report-renderer.js',
   'exporter.js',
@@ -46,9 +48,11 @@ test('declares the adaptive quiz, transition, report and export hooks', () => {
     'start-button', 'last-report-button', 'question-title', 'option-list', 'back-button',
     'next-button', 'progress-label', 'progress-fill', 'transition-copy', 'transition-button',
     'animal-stamp', 'result-name', 'result-subtype', 'result-verdict', 'radar-canvas',
+    'result-context',
     'dimension-list', 'strength-list', 'risk-list', 'action-list', 'work-mode', 'warning-copy',
     'save-image-button', 'publish-note-button', 'restart-button', 'export-canvas',
   ].forEach((id) => assert.match(html, new RegExp(`id=["']${id}["']`), `${id} hook is missing`));
+  ['industry-options', 'role-options', 'context-skip-button'].forEach((id) => assert.match(html, new RegExp(`id=["']${id}["']`), `${id} context hook is missing`));
   assert.match(html, /你属于哪种[\s\S]*打工体质？/);
   assert.match(html, /18–21 题动态路径/);
 });

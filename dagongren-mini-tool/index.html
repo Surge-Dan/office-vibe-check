@@ -29,10 +29,26 @@
             <span>待鉴定</span>
           </div>
         </div>
-        <div class="home-meta">
-          <span>18–21 题动态路径</span><span>约 4 分钟</span><span>结果仅供娱乐</span>
-        </div>
-        <p id="home-error" class="inline-message" role="alert"></p>
+            <div class="home-meta">
+              <span>18–21 题动态路径</span><span>约 4 分钟</span><span>结果仅供娱乐</span>
+            </div>
+            <section class="context-picker" aria-labelledby="context-title">
+              <div class="context-heading">
+                <p class="eyebrow">先给档案一行注释</p>
+                <h2 id="context-title">你在哪种职场生态里活动？</h2>
+                <p>只用来替换少数场景词，不参与分数；不想标注也完全可以跳过。</p>
+              </div>
+              <div class="context-group">
+                <span class="context-label">行业</span>
+                <div id="industry-options" class="context-options" role="radiogroup" aria-label="选择行业"></div>
+              </div>
+              <div class="context-group">
+                <span class="context-label">岗位</span>
+                <div id="role-options" class="context-options" role="radiogroup" aria-label="选择岗位"></div>
+              </div>
+              <button id="context-skip-button" class="context-skip" type="button">我先不标注，直接开始 →</button>
+            </section>
+            <p id="home-error" class="inline-message" role="alert"></p>
         <div class="home-actions">
           <button id="start-button" class="button button-primary" type="button">开始鉴定 <span aria-hidden="true">→</span></button>
           <button id="last-report-button" class="button button-secondary" type="button" hidden>查看上次报告</button>
@@ -64,16 +80,16 @@
       <section id="transition-screen" class="screen transition-screen" aria-labelledby="transition-copy" hidden>
         <div class="transition-mark" aria-hidden="true">///</div>
         <p class="eyebrow">档案正在显影</p>
-        <h2 id="transition-copy">你已经暴露了一点工位本能。</h2>
+            <h2 id="transition-copy">你的默认反应露了一角。</h2>
         <p id="transition-detail">没有标准答案，只有你更像哪一种求生方式。</p>
         <button id="transition-button" class="button button-primary" type="button">继续追问 →</button>
       </section>
 
       <section id="report-screen" class="screen report-screen" aria-labelledby="result-name" hidden>
         <header class="report-identity">
-          <div class="report-index">
-            <p class="eyebrow">体质鉴定单 / 已归档</p>
-            <span id="result-code">SPECIMEN / ----</span>
+              <div class="report-index">
+                <p class="eyebrow">体质鉴定单 / 已归档</p>
+                <span><span id="result-context">跨行业通用 · 通用岗位</span><br><span id="result-code">SPECIMEN / ----</span></span>
           </div>
           <canvas id="animal-stamp" class="animal-stamp" width="210" height="210" aria-label="结果动物印章"></canvas>
           <div class="result-heading">
@@ -136,10 +152,12 @@
     <canvas id="export-canvas" width="1080" height="2400" hidden></canvas>
   </div>
 
-  <script src="./dimensions.js"></script>
-  <script src="./questions.js"></script>
+      <script src="./context.js"></script>
+      <script src="./dimensions.js"></script>
+      <script src="./questions.js"></script>
   <script src="./archetypes.js"></script>
-  <script src="./animals.js"></script>
+      <script src="./animals.js"></script>
+      <script src="./transition-copy.js"></script>
   <script src="./assessment-engine.js"></script>
   <script src="./radar-renderer.js"></script>
   <script src="./report-renderer.js"></script>

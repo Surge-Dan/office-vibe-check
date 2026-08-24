@@ -1,8 +1,9 @@
 (function (root) {
   const data = root.DagongrenAssessmentData = root.DagongrenAssessmentData || {};
 
-  function option(id, text, weights) { return { id, text, weights }; }
-  function question(id, stage, focus, scene, options) { return { id, stage, focus, scene, options }; }
+  function adapt(text) { return root.DagongrenContext ? root.DagongrenContext.adaptScene(text, null) : text; }
+  function option(id, text, weights) { return { id, text: adapt(text), weights }; }
+  function question(id, stage, focus, scene, options) { return { id, stage, focus, scene: adapt(scene), options }; }
   function opts(prefix, rows) { return rows.map((row, index) => option(`${prefix}-${String.fromCharCode(97 + index)}`, row[0], row[1])); }
 
   const anchors = [

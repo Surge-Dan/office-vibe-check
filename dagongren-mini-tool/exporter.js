@@ -57,18 +57,18 @@
 
   function sectionTitle(ctx, label, title, y) {
     ctx.fillStyle = BLUE; ctx.font = '700 24px monospace'; ctx.fillText(label, 72, y);
-    ctx.fillStyle = INK; ctx.font = '700 42px "PingFang SC", "Microsoft YaHei", sans-serif'; ctx.fillText(title, 142, y + 4);
+    ctx.fillStyle = INK; ctx.font = '700 42px "Source Han Sans SC", "Noto Sans CJK SC", "MiSans", "PingFang SC", "Microsoft YaHei", sans-serif'; ctx.fillText(title, 142, y + 4);
     return y + 46;
   }
 
   function drawList(ctx, items, y, options) {
     const settings = options || {};
-    ctx.font = `${settings.bold ? '700' : '400'} 28px "PingFang SC", "Microsoft YaHei", sans-serif`;
+    ctx.font = `${settings.bold ? '700' : '400'} 28px "Source Han Sans SC", "Noto Sans CJK SC", "MiSans", "PingFang SC", "Microsoft YaHei", sans-serif`;
     items.forEach((item, index) => {
       ctx.fillStyle = settings.marker || RED;
       ctx.font = '700 20px monospace'; ctx.fillText(String(index + 1).padStart(2, '0'), 78, y + 28);
       ctx.fillStyle = INK;
-      ctx.font = `${settings.bold ? '700' : '400'} 28px "PingFang SC", "Microsoft YaHei", sans-serif`;
+      ctx.font = `${settings.bold ? '700' : '400'} 28px "Source Han Sans SC", "Noto Sans CJK SC", "MiSans", "PingFang SC", "Microsoft YaHei", sans-serif`;
       y = wrapText(ctx, item, 136, y + 28, 850, 42, 2) + 18;
     });
     return y;
@@ -101,10 +101,10 @@
     rule(ctx, 112);
     root.DagongrenAnimals.drawStamp(ctx, report.code, 190, 286, 230, RED, PAPER);
     ctx.fillStyle = BLUE; ctx.font = '700 24px monospace'; ctx.fillText(`TYPE / ${report.code}`, 350, 198);
-    ctx.fillStyle = INK; ctx.font = '700 72px "Songti SC", "STSong", serif';
+    ctx.fillStyle = INK; ctx.font = '700 72px "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", "STSong", serif';
     wrapText(ctx, report.name, 350, 282, 620, 82, 2);
-    ctx.fillStyle = RED; ctx.font = '700 28px "PingFang SC", sans-serif'; ctx.fillText(report.subtype, 352, 356);
-    ctx.fillStyle = INK; ctx.font = '700 36px "Songti SC", "STSong", serif';
+    ctx.fillStyle = RED; ctx.font = '700 28px "Source Han Sans SC", "Noto Sans CJK SC", "MiSans", "PingFang SC", sans-serif'; ctx.fillText(report.subtype, 352, 356);
+    ctx.fillStyle = INK; ctx.font = '700 36px "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", "STSong", serif';
     wrapText(ctx, report.verdict, 72, 472, 936, 52, 2);
     rule(ctx, 570);
 
@@ -115,14 +115,14 @@
     ctx.font = '700 24px monospace'; ctx.fillStyle = BLUE; ctx.fillText('9-DIMENSION PROFILE', 560, 640);
     report.dimensions.forEach((dimension, index) => {
       const y = 690 + (index * 42);
-      ctx.fillStyle = INK; ctx.font = '400 24px "PingFang SC", sans-serif'; ctx.fillText(dimension.name, 560, y);
+      ctx.fillStyle = INK; ctx.font = '400 24px "Source Han Sans SC", "Noto Sans CJK SC", "MiSans", "PingFang SC", sans-serif'; ctx.fillText(dimension.name, 560, y);
       ctx.fillStyle = dimension.color; ctx.fillRect(720, y - 18, (dimension.score / 100) * 220, 12);
       ctx.fillStyle = INK; ctx.font = '700 20px monospace'; ctx.textAlign = 'right'; ctx.fillText(String(dimension.score), 980, y); ctx.textAlign = 'left';
     });
     rule(ctx, 1110);
 
     let y = sectionTitle(ctx, '01', '优势 / 雷区', 1170);
-    ctx.fillStyle = RED; ctx.font = '700 24px "PingFang SC", sans-serif'; ctx.fillText('你的职场优势', 78, y + 22);
+    ctx.fillStyle = RED; ctx.font = '700 24px "Source Han Sans SC", "Noto Sans CJK SC", "MiSans", "PingFang SC", sans-serif'; ctx.fillText('你的职场优势', 78, y + 22);
     ctx.fillStyle = BLUE; ctx.fillText('你的职场雷区', 570, y + 22);
     const advantageEnd = drawColumnList(ctx, report.strengths, 78, y + 48, 430, RED);
     const riskEnd = drawColumnList(ctx, report.risks, 570, y + 48, 430, BLUE);
@@ -132,11 +132,11 @@
     y = drawList(ctx, report.actions, y + 10, { bold: true });
     rule(ctx, y + 4);
     y = sectionTitle(ctx, '03', '适合你的工作模式', y + 58);
-    ctx.fillStyle = INK; ctx.font = '400 28px "PingFang SC", sans-serif';
+    ctx.fillStyle = INK; ctx.font = '400 28px "Source Han Sans SC", "Noto Sans CJK SC", "MiSans", "PingFang SC", sans-serif';
     y = wrapText(ctx, report.workMode, 72, y + 22, 936, 40, 2) + 22;
     ctx.fillStyle = RED; ctx.fillRect(72, y, 936, 128);
     ctx.fillStyle = PAPER; ctx.font = '700 23px monospace'; ctx.fillText('STOP-LOSS NOTE', 96, y + 36);
-    ctx.font = '700 28px "PingFang SC", sans-serif'; wrapText(ctx, report.warning, 96, y + 78, 880, 40, 2);
+    ctx.font = '700 28px "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", "STSong", serif'; wrapText(ctx, report.warning, 96, y + 78, 880, 40, 2);
     ctx.fillStyle = INK; ctx.font = '700 22px monospace'; ctx.fillText('班味鉴定所 · 结果仅供娱乐与自我观察', 72, HEIGHT - 54);
     ctx.textAlign = 'right'; ctx.fillStyle = BLUE; ctx.fillText(`SECOND / ${report.secondary.name}`, WIDTH - 72, HEIGHT - 54);
     return { canvas, dataUri: canvas.toDataURL('image/jpeg', 0.92), width: WIDTH, height: HEIGHT };

@@ -42,6 +42,8 @@
   }
 
   function renderReport(doc, report) {
+    const context = root.DagongrenContext ? root.DagongrenContext.getLabels(report.context) : { industryShort: '跨行业通用', roleShort: '通用岗位' };
+    doc.getElementById('result-context').textContent = `${context.industryShort} · ${context.roleShort}`;
     doc.getElementById('result-code').textContent = `SPECIMEN / ${report.code} / ${report.signature}`;
     doc.getElementById('result-name').textContent = report.name;
     doc.getElementById('result-subtype').textContent = report.subtype;

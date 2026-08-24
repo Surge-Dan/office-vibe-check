@@ -17,13 +17,28 @@
     ctx.lineWidth = Math.max(2, size * 0.026);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+    if (ctx.createLinearGradient) {
+      const wash = ctx.createLinearGradient(-size * 0.45, -size * 0.45, size * 0.45, size * 0.5);
+      wash.addColorStop(0, paper || '#F3F0E8');
+      wash.addColorStop(0.58, '#FFFDF6');
+      wash.addColorStop(1, paper || '#F3F0E8');
+      ctx.fillStyle = wash;
+    }
+    ctx.shadowColor = 'rgba(24,24,21,.12)';
+    ctx.shadowBlur = size * 0.018;
+    ctx.shadowOffsetY = size * 0.012;
     ctx.beginPath();
     ctx.arc(0, 0, size * 0.48, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
     ctx.globalAlpha = 0.42;
+    if (ctx.setLineDash) ctx.setLineDash([size * 0.018, size * 0.028]);
     ctx.beginPath();
     ctx.arc(size * 0.012, -size * 0.006, size * 0.45, 0.08, Math.PI * 2.04);
     ctx.stroke();
+    if (ctx.setLineDash) ctx.setLineDash([]);
     ctx.globalAlpha = 1;
 
     ctx.beginPath();
@@ -40,6 +55,11 @@
       ctx.moveTo(-size * 0.30, -size * 0.24); ctx.quadraticCurveTo(-size * 0.52, -size * 0.20, -size * 0.34, size * 0.02);
       ctx.moveTo(size * 0.30, -size * 0.24); ctx.quadraticCurveTo(size * 0.52, -size * 0.20, size * 0.34, size * 0.02);
     }
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.22, -size * 0.12);
+    ctx.bezierCurveTo(-size * 0.17, -size * 0.27, size * 0.17, -size * 0.27, size * 0.22, -size * 0.12);
     ctx.stroke();
 
     ctx.beginPath();
@@ -71,6 +91,14 @@
       ctx.beginPath();
       ctx.moveTo(line * size * 0.13, size * 0.12); ctx.lineTo(line * size * 0.30, size * 0.08);
       ctx.moveTo(line * size * 0.13, size * 0.16); ctx.lineTo(line * size * 0.31, size * 0.18);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 0.24;
+    for (let mark = -2; mark <= 2; mark += 1) {
+      const offset = mark * size * 0.075;
+      ctx.beginPath();
+      ctx.moveTo(-size * 0.2 + offset, size * 0.27);
+      ctx.bezierCurveTo(-size * 0.13 + offset, size * 0.31, -size * 0.08 + offset, size * 0.31, -size * 0.02 + offset, size * 0.28);
       ctx.stroke();
     }
     ctx.restore();
