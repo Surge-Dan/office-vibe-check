@@ -67,11 +67,15 @@ h1 em { color: var(--red); font-style: normal; text-decoration: underline; text-
 .context-picker { margin-top: 28px; padding: 20px 0 4px; border-bottom: 1px solid var(--line); }
 .context-heading h2 { margin-top: 8px; font: 700 25px/1.2 var(--display); }
 .context-heading > p:last-child { max-width: 520px; margin-top: 8px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.context-step-indicator { display: inline-block; margin-top: 17px; padding: 7px 9px; background: var(--ink); color: var(--paper); font: 800 10px/1 var(--mono); letter-spacing: .08em; }
+.context-step[hidden] { display: none; }
 .context-group { margin-top: 18px; }
 .context-label { display: block; margin-bottom: 9px; color: var(--blue); font: 800 11px/1 var(--mono); letter-spacing: .08em; }
 .context-options { display: flex; flex-wrap: wrap; gap: 7px; }
 .context-chip { min-height: 34px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 99px; background: rgba(255,255,255,.22); cursor: pointer; font-size: 12px; line-height: 1.3; }
 .context-chip[aria-checked="true"] { border-color: var(--ink); background: var(--acid); box-shadow: 2px 2px 0 var(--ink); font-weight: 800; }
+.context-nav { display: flex; align-items: center; gap: 14px; margin-top: 18px; }
+.context-next { min-height: 38px; padding: 7px 13px; border: 1px solid var(--ink); background: var(--acid); box-shadow: 3px 3px 0 var(--ink); cursor: pointer; font-weight: 800; }
 .context-skip { margin-top: 18px; padding: 5px 0; border: 0; border-bottom: 1px solid var(--ink); background: transparent; cursor: pointer; color: var(--muted); font-size: 12px; }
 .home-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
 .privacy-note { margin-top: 18px; color: var(--muted); font-size: 12px; }

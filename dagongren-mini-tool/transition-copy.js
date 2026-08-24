@@ -28,7 +28,7 @@
     const list = pools[focus];
     const context = root.DagongrenContext ? root.DagongrenContext.getLabels(value.context) : { industryShort: '跨行业通用', roleShort: '通用岗位' };
     const item = list[hash(`${value.stage || 'anchor'}|${value.index || 0}|${focus}|${context.industryShort}|${context.roleShort}`) % list.length];
-    const detail = context.industryShort === '跨行业通用'
+    const detail = context.industryId === 'other'
       ? item[1]
       : `${item[1]} 在${context.industryShort}的${context.roleShort}现场，这个反应尤其容易被看见。`;
     return { headline: item[0], detail };

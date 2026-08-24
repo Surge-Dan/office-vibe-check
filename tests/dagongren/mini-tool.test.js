@@ -11,6 +11,7 @@ const expectedFiles = [
   'context.js',
   'dimensions.js',
   'questions.js',
+  'context-questions.js',
   'archetypes.js',
   'animals.js',
   'assessment-engine.js',
@@ -52,7 +53,7 @@ test('declares the adaptive quiz, transition, report and export hooks', () => {
     'dimension-list', 'strength-list', 'risk-list', 'action-list', 'work-mode', 'warning-copy',
     'save-image-button', 'publish-note-button', 'restart-button', 'export-canvas',
   ].forEach((id) => assert.match(html, new RegExp(`id=["']${id}["']`), `${id} hook is missing`));
-  ['industry-options', 'role-options', 'context-skip-button'].forEach((id) => assert.match(html, new RegExp(`id=["']${id}["']`), `${id} context hook is missing`));
+  ['identity-options', 'industry-options', 'role-options', 'context-step-indicator', 'context-next-button', 'context-back-button', 'context-skip-button'].forEach((id) => assert.match(html, new RegExp(`id=["']${id}["']`), `${id} context hook is missing`));
   assert.match(html, /你属于哪种[\s\S]*打工体质？/);
   assert.match(html, /18–21 题动态路径/);
 });

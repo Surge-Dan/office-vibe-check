@@ -1,5 +1,5 @@
 (function (root) {
-  const STAGE_COUNTS = { anchor: 12, branch: 36, calibration: 4, hidden: 2 };
+  const STAGE_COUNTS = { anchor: 12, branch: 36, context: 60, calibration: 4, hidden: 2 };
   const validatedData = new WeakSet();
   const dataIndexes = new WeakMap();
 
@@ -12,13 +12,13 @@
     if (data && validatedData.has(data)) return true;
     assert(data && data.version, '题库版本无效');
     assert(Array.isArray(data.dimensions) && data.dimensions.length === 9, '维度数量必须为 9');
-    assert(Array.isArray(data.questions) && data.questions.length === 54, '题目数量必须为 54');
+    assert(Array.isArray(data.questions) && data.questions.length === 114, '题目数量必须为 114');
     assert(Array.isArray(data.archetypes) && data.archetypes.length === 22, '体质数量必须为 22');
     const dimensions = new Set(dimensionIds(data));
     assert(dimensions.size === 9, '维度 ID 配置无效');
     const questionIds = new Set();
     const optionIds = new Set();
-    const stageCounts = { anchor: 0, branch: 0, calibration: 0, hidden: 0 };
+    const stageCounts = { anchor: 0, branch: 0, context: 0, calibration: 0, hidden: 0 };
     const coverage = Object.fromEntries(Array.from(dimensions, (id) => [id, 0]));
 
     data.questions.forEach((question) => {
@@ -27,6 +27,11 @@
       assert(dimensions.has(question.focus), `题目 ${question.id} 主维度无效`);
       assert(typeof question.scene === 'string' && question.scene.length >= 12, `题目 ${question.id} 场景过短`);
       assert(Array.isArray(question.options) && question.options.length === 4, `题目 ${question.id} 必须有四个选项`);
+      if (question.stage === 'context') {
+        assert(question.source === 'role' || question.source === 'industry', `题目 ${question.id} 来源无效`);
+        if (question.source === 'role') assert(typeof question.roleFamily === 'string' && question.roleFamily, `题目 ${question.id} 岗位族群无效`);
+        if (question.source === 'industry') assert(typeof question.industryId === 'string' && question.industryId, `题目 ${question.id} 行业簇无效`);
+      }
       questionIds.add(question.id);
       stageCounts[question.stage] += 1;
       question.options.forEach((option) => {
@@ -47,6 +52,14 @@
     });
     Object.keys(STAGE_COUNTS).forEach((stage) => assert(stageCounts[stage] === STAGE_COUNTS[stage], `${stage} 题目数量无效`));
     Object.keys(coverage).forEach((id) => assert(coverage[id] >= 2, `维度 ${id} 的锚点证据不足`));
+    const roleContextCounts = {};
+    const industryContextCounts = {};
+    data.questions.filter((question) => question.stage === 'context').forEach((question) => {
+      if (question.source === 'role') roleContextCounts[question.roleFamily] = (roleContextCounts[question.roleFamily] || 0) + 1;
+      if (question.source === 'industry') industryContextCounts[question.industryId] = (industryContextCounts[question.industryId] || 0) + 1;
+    });
+    ['management', 'technical', 'professional', 'operations', 'sales', 'content', 'support', 'public', 'student', 'independent'].forEach((family) => assert(roleContextCounts[family] === 4, `岗位族群 ${family} 必须有 4 道场景题`));
+    ['technology', 'finance', 'health', 'education', 'manufacturing', 'construction', 'service', 'media', 'public', 'other'].forEach((id) => assert(industryContextCounts[id] === 2, `行业簇 ${id} 必须有 2 道补充题`));
     data.dimensions.forEach((dimension) => {
       assert(data.questions.filter((question) => question.stage === 'branch' && question.focus === dimension.id).length === 4, `维度 ${dimension.id} 的分支题必须为 4 道`);
     });
@@ -82,10 +95,19 @@
       questions: mapById(data.questions),
       anchors: data.questions.filter((question) => question.stage === 'anchor'),
       branches: {},
+      roleQuestions: {},
+      industryQuestions: {},
     };
     data.dimensions.forEach((dimension) => {
       index.branches[dimension.id] = data.questions.filter((question) => question.stage === 'branch' && question.focus === dimension.id);
     });
+    data.questions.filter((question) => question.stage === 'context' && question.source === 'role').forEach((question) => {
+      (index.roleQuestions[question.roleFamily] = index.roleQuestions[question.roleFamily] || []).push(question);
+    });
+    data.questions.filter((question) => question.stage === 'context' && question.source === 'industry').forEach((question) => {
+      (index.industryQuestions[question.industryId] = index.industryQuestions[question.industryId] || []).push(question);
+    });
+    if (!index.roleQuestions.other) index.roleQuestions.other = index.roleQuestions.technical || index.roleQuestions.professional;
     dataIndexes.set(data, index);
     return index;
   }
@@ -172,7 +194,19 @@
     return prominent.concat(calibrationNeed).map((dimension) => dimension.id);
   }
 
-  function buildAdaptiveRoute(anchorAnswers, data) {
+  function pickContextQuestions(pool, selectedDimensions, hash, count) {
+    if (!pool || !pool.length) return [];
+    const ranked = pool.slice().sort((left, right) => {
+      const leftRank = selectedDimensions.includes(left.focus) ? 0 : 1;
+      const rightRank = selectedDimensions.includes(right.focus) ? 0 : 1;
+      return leftRank - rightRank || left.id.localeCompare(right.id);
+    });
+    const offset = hash % ranked.length;
+    const rotated = ranked.slice(offset).concat(ranked.slice(0, offset));
+    return rotated.slice(0, Math.min(count, rotated.length));
+  }
+
+  function buildAdaptiveRoute(anchorAnswers, data, workplaceContext) {
     validateAssessmentData(data);
     const dataIndex = getDataIndex(data);
     const anchors = dataIndex.anchors;
@@ -181,11 +215,15 @@
     const scored = scoreAnswers(anchorAnswers, anchorIds, data);
     const selectedDimensions = selectTargetDimensions(anchorAnswers, data);
     const answerHash = hashAnswers(anchorAnswers, anchorIds);
-    const branches = [];
-    selectedDimensions.forEach((id, dimensionIndex) => {
+    const contextApi = root.DagongrenContext;
+    const context = contextApi ? contextApi.normalize(workplaceContext) : { roleFamily: 'other', industryId: 'other' };
+    const industryCluster = contextApi && contextApi.getIndustryCluster ? contextApi.getIndustryCluster(context.industryId) : context.industryId;
+    const roleQuestions = pickContextQuestions(dataIndex.roleQuestions[context.roleFamily] || dataIndex.roleQuestions.other, selectedDimensions, answerHash, 2);
+    const industryQuestions = pickContextQuestions(dataIndex.industryQuestions[industryCluster] || dataIndex.industryQuestions.other, selectedDimensions, answerHash >>> 3, 2);
+    const branches = selectedDimensions.slice(0, 2).map((id, dimensionIndex) => {
       const pool = dataIndex.branches[id];
       const start = (answerHash + (dimensionIndex * 3)) % pool.length;
-      branches.push(pool[start].id, pool[(start + 2) % pool.length].id);
+      return pool[start];
     });
 
     const calibrationMap = [
@@ -205,7 +243,7 @@
     const score = scored.scores;
     if ((score.boundary >= 68 && score.pleasing <= 42) || (score.drive >= 72 && score.pleasing >= 64)) hidden.push('h-offhours');
     else if (score.politics >= 65 && (score.conflict <= 45 || score.boundary >= 60)) hidden.push('h-mask');
-    return anchorIds.concat(branches, calibrations, hidden);
+    return anchorIds.concat(roleQuestions, industryQuestions, branches, calibrations, hidden).map((item) => item.id || item);
   }
 
   function hiddenMatch(answers, scores, type) {
@@ -261,8 +299,8 @@
     validateAssessmentData(data);
     assert(Array.isArray(route) && route.length >= 18 && route.length <= 21 && new Set(route).size === route.length, '动态路径无效');
     const contextApi = root.DagongrenContext;
-    const context = contextApi ? contextApi.normalize(workplaceContext) : { industryId: 'general', roleId: 'general' };
-    const labels = contextApi ? contextApi.getLabels(context) : { industryShort: '跨行业通用', roleShort: '通用岗位' };
+    const context = contextApi ? contextApi.normalize(workplaceContext) : { identityId: 'other', industryId: 'other', roleId: 'other-role', roleFamily: 'other' };
+    const labels = contextApi ? contextApi.getLabels(context) : { industryShort: '其他行业', roleShort: '其他岗位' };
     const scored = scoreAnswers(answers, route, data);
     const matched = matchArchetype(scored.scores, scored.confidence, answers, data, scored.evidence);
     const primary = matched.primary;
@@ -319,11 +357,11 @@
     };
   }
 
-  function rebuildAfterAnchorEdit(answers, previousRoute, data) {
+  function rebuildAfterAnchorEdit(answers, previousRoute, data, workplaceContext) {
     const anchorIds = data.questions.filter((question) => question.stage === 'anchor').map((question) => question.id);
     const kept = {};
     anchorIds.forEach((id) => { if (answers[id]) kept[id] = answers[id]; });
-    return { answers: kept, route: buildAdaptiveRoute(kept, data), previousRoute: previousRoute.slice() };
+    return { answers: kept, route: buildAdaptiveRoute(kept, data, workplaceContext), previousRoute: previousRoute.slice() };
   }
 
   function isValidSessionSnapshot(session, data) {
@@ -331,7 +369,7 @@
       if (!session || session.version !== data.version || !Number.isInteger(session.index) || !Array.isArray(session.route) || !session.answers || typeof session.answers !== 'object') return false;
       if (session.context && root.DagongrenContext) {
         const normalizedContext = root.DagongrenContext.normalize(session.context);
-        if (normalizedContext.industryId !== session.context.industryId || normalizedContext.roleId !== session.context.roleId) return false;
+        if (normalizedContext.identityId !== session.context.identityId || normalizedContext.industryId !== session.context.industryId || normalizedContext.roleId !== session.context.roleId || normalizedContext.roleFamily !== session.context.roleFamily) return false;
       }
       if (![12, 18, 19, 20, 21].includes(session.route.length) || session.index < 0 || session.index >= session.route.length || new Set(session.route).size !== session.route.length) return false;
       const anchors = getDataIndex(data).anchors.map((question) => question.id);
@@ -341,7 +379,7 @@
       for (let index = 0; index < session.index; index += 1) if (!session.answers[session.route[index]]) return false;
       if (session.route.length > 12) {
         if (!anchors.every((id) => session.answers[id])) return false;
-        if (buildAdaptiveRoute(session.answers, data).join('|') !== session.route.join('|')) return false;
+        if (buildAdaptiveRoute(session.answers, data, session.context).join('|') !== session.route.join('|')) return false;
       }
       return true;
     } catch (error) { return false; }
@@ -352,7 +390,7 @@
       if (!report || report.version !== data.version || !data.archetypes.some((type) => type.id === report.primaryId)) return false;
       if (report.context && root.DagongrenContext) {
         const normalizedContext = root.DagongrenContext.normalize(report.context);
-        if (normalizedContext.industryId !== report.context.industryId || normalizedContext.roleId !== report.context.roleId) return false;
+        if (normalizedContext.identityId !== report.context.identityId || normalizedContext.industryId !== report.context.industryId || normalizedContext.roleId !== report.context.roleId || normalizedContext.roleFamily !== report.context.roleFamily) return false;
       }
       if (!report.secondary || !data.archetypes.some((type) => type.id === report.secondary.id) || !Array.isArray(report.secondary.differences) || report.secondary.differences.length !== 2) return false;
       if (!Array.isArray(report.dimensions) || report.dimensions.length !== 9 || !report.scores || !report.confidence) return false;

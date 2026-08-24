@@ -13,23 +13,26 @@ function load(file) {
   return sandbox.window;
 }
 
-test('normalizes industry and role context with a safe general fallback', () => {
+test('normalizes three-step identity, industry and role context with safe fallbacks', () => {
   const context = load('context.js').DagongrenContext;
-  assert.equal(context.industries.length, 9);
-  assert.equal(context.roles.length, 7);
-  assert.deepEqual({ ...context.normalize({ industryId: 'education', roleId: 'research' }) }, {
-    industryId: 'education', roleId: 'research',
+  assert.ok(context.identities.length >= 10);
+  assert.ok(context.industries.length >= 15);
+  assert.ok(context.roles.length >= 30);
+  assert.deepEqual({ ...context.normalize({ identityId: 'professional', industryId: 'education', roleId: 'teacher' }) }, {
+    identityId: 'professional', industryId: 'education', roleId: 'teacher', roleFamily: 'professional',
   });
-  assert.deepEqual({ ...context.normalize({ industryId: 'unknown', roleId: null }) }, {
-    industryId: 'general', roleId: 'general',
+  assert.deepEqual({ ...context.normalize({ identityId: 'unknown', industryId: 'unknown', roleId: null }) }, {
+    identityId: 'other', industryId: 'other', roleId: 'other-role', roleFamily: 'other',
   });
+  assert.ok(context.getRolesFor('sales', 'service').length >= 3);
+  assert.ok(context.getRolesFor('student', 'other').some((role) => role.id === 'other-role'));
 });
 
 test('keeps default scenes universal while making selected contexts feel specific', () => {
   const context = load('context.js').DagongrenContext;
   const scene = '你要在今天完成一项重要工作，但负责人没有说清标准和截止时间。你会：';
   const general = context.adaptScene(scene, context.normalize(null));
-  const education = context.adaptScene(scene, { industryId: 'education', roleId: 'research' });
+  const education = context.adaptScene(scene, { identityId: 'professional', industryId: 'education', roleId: 'teacher' });
   assert.equal(general, scene);
   assert.notEqual(education, general);
   assert.match(education, /课程|研究|教学/);
@@ -49,7 +52,7 @@ test('keeps the shipped default question copy understandable across industries',
 
 test('chooses deterministic transition copy without the old workplace wording', () => {
   const transitions = load('transition-copy.js').DagongrenTransitions;
-  const input = { stage: 'anchor', index: 4, focus: 'rumination', context: { industryId: 'general', roleId: 'general' } };
+  const input = { stage: 'anchor', index: 4, focus: 'rumination', context: { identityId: 'other', industryId: 'other', roleId: 'other-role' } };
   const first = transitions.pick(input);
   const same = transitions.pick(input);
   const other = transitions.pick({ ...input, focus: 'boundary' });

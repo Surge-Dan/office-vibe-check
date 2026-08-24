@@ -10,7 +10,7 @@
   let generatedImage = null;
   let previewOpener = null;
   let pendingIndex = 0;
-  const state = { mode: 'home', index: 0, route: anchorIds.slice(), answers: {}, report: null, context: contextApi.normalize(null) };
+  const state = { mode: 'home', index: 0, route: anchorIds.slice(), answers: {}, report: null, context: contextApi.normalize(null), selectionStep: 1 };
 
   function byId(id) { return doc.getElementById(id); }
   function setText(id, text) { byId(id).textContent = text || ''; }
@@ -56,14 +56,24 @@
         button.setAttribute('aria-checked', String(state.context[key] === item.id));
         button.textContent = item.label;
         button.addEventListener('click', () => {
-          state.context = contextApi.normalize({ ...state.context, [key]: item.id });
+          const next = { ...state.context, [key]: item.id };
+          if (key === 'identityId' || key === 'industryId') next.roleId = 'other-role';
+          state.context = contextApi.normalize(next);
+          if (key === 'identityId') state.selectionStep = 2;
+          if (key === 'industryId') state.selectionStep = 3;
           renderContextPicker();
         });
         list.append(button);
       });
     };
+    const steps = ['identity-step', 'industry-step', 'role-step'];
+    steps.forEach((id, index) => { byId(id).hidden = state.selectionStep !== index + 1; });
+    setText('context-step-indicator', `第 ${state.selectionStep} 步 / 3　${['先定身份大类', '再选所在行业', '最后选具体岗位'][state.selectionStep - 1]}`);
+    byId('context-back-button').hidden = state.selectionStep === 1;
+    setText('context-next-button', state.selectionStep === 3 ? '已选好，开始鉴定 →' : '下一步 →');
+    renderGroup('identity-options', contextApi.identities, 'identityId');
     renderGroup('industry-options', contextApi.industries, 'industryId');
-    renderGroup('role-options', contextApi.roles, 'roleId');
+    renderGroup('role-options', contextApi.getRolesFor(state.context.identityId, state.context.industryId), 'roleId');
   }
 
   function renderHome() {
@@ -97,7 +107,8 @@
     const question = questionById[state.route[state.index]];
     const totalLabel = state.route.length > 12 ? state.route.length : '18+';
     byId('quiz-screen').dataset.questionId = question.id;
-    setText('phase-label', state.index < 12 ? '基础画像 / BASE PROFILE' : '定向深挖 / TARGETED PATH');
+    const stageLabel = question.stage === 'anchor' ? '基础画像 / BASE PROFILE' : question.stage === 'context' ? (question.source === 'role' ? '岗位现场 / ROLE SCENE' : '行业补充 / INDUSTRY NOTE') : question.stage === 'calibration' ? '交叉校准 / CALIBRATION' : question.stage === 'hidden' ? '隐藏档案 / HIDDEN NOTE' : '定向深挖 / TARGETED PATH';
+    setText('phase-label', stageLabel);
     setText('progress-label', `${String(state.index + 1).padStart(2, '0')} / ${totalLabel}`);
     setText('question-number', `Q.${String(state.index + 1).padStart(2, '0')}`);
     setText('focus-label', data.dimensions.find((dimension) => dimension.id === question.focus).name);
@@ -139,7 +150,7 @@
     const question = questionById[state.route[state.index]];
     if (!state.answers[question.id]) { setText('quiz-message', '先选一个真实反应，再继续。'); byId('option-list').focus(); return; }
     if (state.index === 11 && state.route.length === 12) {
-      try { state.route = engine.buildAdaptiveRoute(state.answers, data); } catch (error) { setText('quiz-message', '动态路径生成失败，请返回检查答案。'); return; }
+      try { state.route = engine.buildAdaptiveRoute(state.answers, data, state.context); } catch (error) { setText('quiz-message', '动态路径生成失败，请返回检查答案。'); return; }
       persistSession();
       showTransition(12, question.focus, 'branch');
       return;
@@ -239,6 +250,11 @@
       renderHome(); setText('home-error', `档案数据损坏，请重新打开。错误码：DATA-${String(error.message).length}`); byId('start-button').disabled = true; return;
     }
     byId('start-button').addEventListener('click', startAssessment);
+    byId('context-next-button').addEventListener('click', () => {
+      if (state.selectionStep < 3) { state.selectionStep += 1; renderContextPicker(); return; }
+      startAssessment();
+    });
+    byId('context-back-button').addEventListener('click', () => { if (state.selectionStep > 1) { state.selectionStep -= 1; renderContextPicker(); } });
     byId('context-skip-button').addEventListener('click', () => { state.context = contextApi.normalize(null); startAssessment(); });
     byId('last-report-button').addEventListener('click', showLastReport);
     byId('back-button').addEventListener('click', previousQuestion);

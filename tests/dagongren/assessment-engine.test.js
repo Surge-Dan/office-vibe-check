@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '../../dagongren-mini-tool');
 function loadRuntime() {
   const sandbox = { window: {}, console };
   sandbox.globalThis = sandbox.window;
-  ['context.js', 'dimensions.js', 'questions.js', 'archetypes.js', 'assessment-engine.js'].forEach((file) => {
+  ['context.js', 'dimensions.js', 'questions.js', 'context-questions.js', 'archetypes.js', 'assessment-engine.js'].forEach((file) => {
     vm.runInNewContext(fs.readFileSync(path.join(root, file), 'utf8'), sandbox, { filename: file });
   });
   return sandbox.window;
@@ -22,15 +22,15 @@ function anchorAnswers(data, optionIndex) {
   );
 }
 
-test('validates nine dimensions, 54 questions and 22 complete archetypes', () => {
+test('validates nine dimensions, pooled context questions and 22 complete archetypes', () => {
   const runtime = loadRuntime();
   const data = runtime.DagongrenAssessmentData;
   assert.equal(runtime.DagongrenAssessmentEngine.validateAssessmentData(data), true);
   assert.equal(data.dimensions.length, 9);
-  assert.equal(data.questions.length, 54);
+  assert.equal(data.questions.length, 114);
   assert.deepEqual(
-    Object.fromEntries(['anchor', 'branch', 'calibration', 'hidden'].map((stage) => [stage, data.questions.filter((q) => q.stage === stage).length])),
-    { anchor: 12, branch: 36, calibration: 4, hidden: 2 },
+    Object.fromEntries(['anchor', 'branch', 'context', 'calibration', 'hidden'].map((stage) => [stage, data.questions.filter((q) => q.stage === stage).length])),
+    { anchor: 12, branch: 36, context: 60, calibration: 4, hidden: 2 },
   );
   assert.equal(data.archetypes.filter((type) => !type.hidden).length, 18);
   assert.equal(data.archetypes.filter((type) => type.hidden).length, 4);
@@ -44,6 +44,21 @@ test('validates nine dimensions, 54 questions and 22 complete archetypes', () =>
     && type.signatureDimensions.length === 3 && type.minimumEvidence >= 2
     && type.strengths.length === 3 && type.risks.length === 3 && type.actions.length === 3
   )));
+});
+
+test('prioritizes role questions over industry supplements for the selected context', () => {
+  const { DagongrenAssessmentData: data, DagongrenAssessmentEngine: engine } = loadRuntime();
+  const answers = anchorAnswers(data, 1);
+  const context = { identityId: 'sales', industryId: 'service', roleId: 'account-manager' };
+  const route = engine.buildAdaptiveRoute(answers, data, context);
+  const contextQuestions = route.slice(12).map((id) => data.questions.find((question) => question.id === id));
+  const roleQuestions = contextQuestions.filter((question) => question.source === 'role');
+  const industryQuestions = contextQuestions.filter((question) => question.source === 'industry');
+  assert.equal(roleQuestions.length, 2);
+  assert.equal(industryQuestions.length, 2);
+  assert.ok(route.slice(12, 14).every((id) => data.questions.find((question) => question.id === id).source === 'role'));
+  assert.ok(roleQuestions.every((question) => question.roleFamily === 'sales'));
+  assert.ok(industryQuestions.every((question) => question.industryId === 'service'));
 });
 
 test('builds deterministic answer-dependent routes of 18 to 21 unique questions', () => {
@@ -60,7 +75,7 @@ test('builds deterministic answer-dependent routes of 18 to 21 unique questions'
     assert.ok(route.length >= 18 && route.length <= 21, route.length);
     assert.equal(new Set(route).size, route.length);
     assert.ok(route.slice(0, 12).every((id) => data.questions.find((question) => question.id === id).stage === 'anchor'));
-    assert.equal(route.filter((id) => data.questions.find((question) => question.id === id).stage === 'branch').length, 6);
+    assert.equal(route.filter((id) => data.questions.find((question) => question.id === id).stage === 'branch').length, 2);
   });
   const targets = engine.selectTargetDimensions(firstAnswers, data);
   const scored = engine.scoreAnswers(firstAnswers, data.questions.filter((question) => question.stage === 'anchor').map((question) => question.id), data);
@@ -128,15 +143,15 @@ test('creates a stable complete report and rebuilds unanswered branches after an
 
 test('keeps selected workplace context in the report and expands its share copy', () => {
   const { DagongrenAssessmentData: data, DagongrenAssessmentEngine: engine } = loadRuntime();
-  const context = { industryId: 'education', roleId: 'research' };
+  const context = { identityId: 'professional', industryId: 'education', roleId: 'teacher' };
   const answers = anchorAnswers(data, 1);
-  const route = engine.buildAdaptiveRoute(answers, data);
+  const route = engine.buildAdaptiveRoute(answers, data, context);
   route.slice(12).forEach((id, index) => {
     const question = data.questions.find((item) => item.id === id);
     answers[id] = question.options[index % 4].id;
   });
   const report = engine.createReport(answers, route, data, context);
-  assert.deepEqual({ ...report.context }, context);
+  assert.deepEqual({ ...report.context }, { ...context, roleFamily: 'professional' });
   assert.match(report.shareContent, /教育|研究/);
   assert.ok(report.shareContent.length > 100);
 });
