@@ -27,10 +27,10 @@ test('validates nine dimensions, pooled context questions and 22 complete archet
   const data = runtime.DagongrenAssessmentData;
   assert.equal(runtime.DagongrenAssessmentEngine.validateAssessmentData(data), true);
   assert.equal(data.dimensions.length, 9);
-  assert.equal(data.questions.length, 114);
+  assert.equal(data.questions.length, 186);
   assert.deepEqual(
     Object.fromEntries(['anchor', 'branch', 'context', 'calibration', 'hidden'].map((stage) => [stage, data.questions.filter((q) => q.stage === stage).length])),
-    { anchor: 12, branch: 36, context: 60, calibration: 4, hidden: 2 },
+    { anchor: 12, branch: 36, context: 132, calibration: 4, hidden: 2 },
   );
   assert.equal(data.archetypes.filter((type) => !type.hidden).length, 18);
   assert.equal(data.archetypes.filter((type) => type.hidden).length, 4);
@@ -59,6 +59,44 @@ test('prioritizes role questions over industry supplements for the selected cont
   assert.ok(route.slice(12, 14).every((id) => data.questions.find((question) => question.id === id).source === 'role'));
   assert.ok(roleQuestions.every((question) => question.roleFamily === 'sales'));
   assert.ok(industryQuestions.every((question) => question.industryId === 'service'));
+});
+
+test('changes concrete role questions instead of only changing the broad role family', () => {
+  const { DagongrenAssessmentData: data, DagongrenAssessmentEngine: engine } = loadRuntime();
+  const answers = anchorAnswers(data, 1);
+  const productRoute = engine.buildAdaptiveRoute(answers, data, { identityId: 'professional', industryId: 'technology', roleId: 'product' });
+  const engineerRoute = engine.buildAdaptiveRoute(answers, data, { identityId: 'professional', industryId: 'technology', roleId: 'engineer' });
+  const nurseRoute = engine.buildAdaptiveRoute(answers, data, { identityId: 'professional', industryId: 'health', roleId: 'nurse' });
+  const roleIds = (route) => route.slice(12, 14);
+  assert.ok(roleIds(productRoute).every((id) => id.startsWith('rt-product-')));
+  assert.ok(roleIds(engineerRoute).every((id) => id.startsWith('rt-engineer-')));
+  assert.ok(roleIds(nurseRoute).every((id) => id.startsWith('rt-nurse-')));
+  assert.notDeepEqual(roleIds(productRoute), roleIds(engineerRoute));
+  assert.notDeepEqual(roleIds(engineerRoute), roleIds(nurseRoute));
+  assert.notEqual(roleIds(productRoute).map((id) => data.questions.find((q) => q.id === id).scene).join('|'), roleIds(engineerRoute).map((id) => data.questions.find((q) => q.id === id).scene).join('|'));
+});
+
+test('keeps industry supplements broad enough to produce visible sector differences', () => {
+  const { DagongrenAssessmentData: data, DagongrenAssessmentEngine: engine } = loadRuntime();
+  const answers = anchorAnswers(data, 0);
+  const sectors = [
+    ['technology', 'engineer', 'technology'],
+    ['health', 'nurse', 'health'],
+    ['manufacturing', 'production-worker', 'manufacturing'],
+    ['education', 'teacher', 'education'],
+    ['service', 'store-service', 'service'],
+  ];
+  const routes = sectors.map(([industryId, roleId, expectedCluster]) => {
+    const route = engine.buildAdaptiveRoute(answers, data, { identityId: 'operations', industryId, roleId });
+    const industry = route.slice(14).map((id) => data.questions.find((q) => q.id === id)).filter((q) => q.source === 'industry');
+    assert.equal(industry.length, 2);
+    assert.ok(industry.every((q) => q.industryId === expectedCluster));
+    return industry.map((q) => q.id).join('|');
+  });
+  assert.equal(new Set(routes).size, sectors.length);
+  for (const cluster of ['technology', 'finance', 'health', 'education', 'manufacturing', 'construction', 'service', 'media', 'public', 'other']) {
+    assert.equal(data.questions.filter((q) => q.source === 'industry' && q.industryId === cluster).length, 6, cluster);
+  }
 });
 
 test('builds deterministic answer-dependent routes of 18 to 21 unique questions', () => {

@@ -7,7 +7,7 @@
 
   function option(id, text, weights) { return { id, text, weights }; }
   function question(id, focus, scene, rows, extra) {
-    return { id, stage: 'context', focus, scene, source: extra.source, roleFamily: extra.roleFamily, industryId: extra.industryId,
+    return { id, stage: 'context', focus, scene, source: extra.source, roleFamily: extra.roleFamily, roleTrack: extra.roleTrack, industryId: extra.industryId,
       options: rows.map((row, index) => option(`${id}-${String.fromCharCode(97 + index)}`, row[0], row[1])) };
   }
   const row = (text, weights) => [text, weights];
@@ -118,11 +118,130 @@
     ],
   };
 
+  // 每个行业簇保留 6 道候选题，运行时只抽 2 道；这样题库有宽度，用户也不会每次都遇到同一题。
+  const weightProfiles = {
+    execution: [{ execution: 2, drive: 1 }, { execution: 1, pleasing: 1 }, { execution: -1, disengage: 1 }, { execution: 2, boundary: 1 }],
+    boundary: [{ boundary: 2, execution: 1 }, { boundary: -2, pleasing: 2 }, { boundary: 2, conflict: 1 }, { boundary: 1, disengage: 1 }],
+    conflict: [{ conflict: 2, boundary: 1 }, { conflict: -1, pleasing: 1 }, { conflict: 1, execution: 2 }, { conflict: -1, disengage: 1 }],
+    drive: [{ drive: 2, execution: 1 }, { drive: 1, pleasing: 1 }, { drive: -1, disengage: 2 }, { drive: 1, boundary: 1 }],
+    rumination: [{ rumination: -1, execution: 2 }, { rumination: 2, pleasing: 1 }, { rumination: 1, boundary: 1 }, { rumination: -1, disengage: 1 }],
+    politics: [{ politics: 2, execution: 1 }, { politics: 1, pleasing: 1 }, { politics: 2, boundary: 1 }, { politics: -1, disengage: 1 }],
+    upward: [{ upward: 2, execution: 1 }, { upward: -1, pleasing: 1 }, { upward: 2, politics: 1 }, { upward: 1, boundary: 1 }],
+    pleasing: [{ pleasing: 2, boundary: -1 }, { pleasing: 1, drive: 1 }, { pleasing: -2, boundary: 2 }, { pleasing: 1, conflict: 1 }],
+  };
+  function scenarioRows(focus, texts) { return texts.map((text, index) => row(text, weightProfiles[focus][index])); }
+
+  const industryExtraPools = {
+    technology: [
+      ['值班时系统或设备突然异常，信息还不完整。你会：', 'execution', ['先确认影响范围和恢复顺序。', '先把能想到的办法全部试一遍。', '按记录和权限逐步排查，不越过底线。', '先通知相关人，等更熟的人接手。']],
+      ['不同团队交接资料不全，事情却已经到了你的环节。你会：', 'boundary', ['列出缺口并让交接人补齐。', '先自己补上，别让别人觉得你难合作。', '只处理记录中明确属于你的部分。', '先找熟悉这类事情的人一起判断。']],
+      ['连续盯屏和处理复杂问题一整天，你最容易出现什么反应？', 'rumination', ['做短暂切换，再回来看关键问题。', '下班后仍反复回放哪里可能出错。', '按标准收尾，不把工作带进晚上的生活。', '找同事复盘一遍，确认自己没有漏看。']],
+      ['临时要你解释一项专业判断，但对方不了解背景。你会：', 'upward', ['先说结论、风险和需要拍板的地方。', '从头讲完所有细节，避免被误会。', '只给一句结论，等对方追问。', '请更熟悉全局的人一起说明。']],
+    ],
+    finance: [
+      ['月末结算前发现一笔数字对不上，相关人都说不是自己造成的。你会：', 'conflict', ['按凭证和时间顺序核对，不先判断谁有错。', '先把差额补上，之后再追原因。', '暂停提交，要求相关人共同确认。', '等负责人定调，自己不卷进责任争议。']],
+      ['审查或合规要求临时增加材料，办理时间却没有变。你会：', 'boundary', ['列出新增工作量，请负责人重新取舍。', '先全部补齐，别让事情卡住。', '按规定退回缺项，不替别人猜材料。', '先确认是否有正式的替代流程。']],
+      ['客户或业务方催你给出一个还没有依据的承诺。你会：', 'upward', ['说明当前能确认的范围和最早时间。', '先答应下来，后面再协调资源。', '明确不能承诺的部分，避免留下口头债。', '先问清对方真正需要解决的是什么。']],
+      ['连续几天处理数字、凭证和检查事项，你会如何保持状态？', 'drive', ['拆成固定批次，按节奏完成。', '趁状态好一口气做到深夜。', '只完成硬性要求，剩下的留到明天。', '给自己设一个停止时间，防止过度消耗。']],
+    ],
+    health: [
+      ['交班时发现上一班留下的信息不完整，但患者或服务对象正在等待。你会：', 'execution', ['先补齐关键风险，再开始处理。', '先把现场顶住，记录之后再补。', '只按已有记录操作，不替别人猜测。', '请有经验的同事一起确认。']],
+      ['高强度值班后，家属或患者把焦虑全部倾向你。你会：', 'boundary', ['先说明能提供的帮助和时间范围。', '尽量都接住，先让对方安心。', '按职责转给合适的人，不承担全部情绪。', '等现场稳定后再处理非紧急沟通。']],
+      ['遇到突发情况，现场意见不一致但时间很紧。你会：', 'conflict', ['快速说出风险和优先级，请负责人拍板。', '先跟着声音最大的人做。', '按流程提出自己的判断，同时保留记录。', '先执行明确的安全动作，争议留到事后。']],
+      ['连续几班都没有完整休息，你会如何安排下一班？', 'drive', ['先确认体力底线和必须完成的事项。', '现场需要就继续顶上。', '按规定完成关键事项，额外工作重新安排。', '先把最危险的环节处理掉，再谈其他。']],
+    ],
+    education: [
+      ['一周内同时遇到备课、授课、批改或研究节点，你会：', 'execution', ['按截止时间拆出每天可检查的小步。', '先完成最急的一项，其他之后再说。', '只做硬性要求，不主动加码。', '找同事或负责人确认真正优先级。']],
+      ['家长、学生或合作方在非工作时间不断追加要求。你会：', 'boundary', ['说明响应时段和本次能提供的支持。', '能帮就帮，别让关系卡在自己这里。', '按制度处理，超出范围请走正式渠道。', '先收集诉求，等合适时间统一回复。']],
+      ['课堂、实验或训练现场突然出现秩序问题，你会：', 'conflict', ['先稳定现场，再说明规则和下一步。', '尽量满足最吵的人，先让现场安静。', '明确底线，必要时请负责人介入。', '先暂停活动，等大家冷静后继续。']],
+      ['学生或同事的反馈让你怀疑自己做得不够好。你会：', 'rumination', ['找一个可验证的改动，下次观察效果。', '反复回想每句话是不是说错了。', '接受反馈，但不让一次评价定义自己。', '找同行讨论，区分事实和情绪。']],
+    ],
+    manufacturing: [
+      ['设备在交接班后出现异常，现场还没有形成统一判断。你会：', 'execution', ['先停住风险点，按顺序排查。', '先把产出顶住，原因之后再说。', '按安全和质量标准上报，不私自改参数。', '叫熟悉设备的人一起确认。']],
+      ['质量记录出现偏差，但现场有人说“差不多就行”。你会：', 'boundary', ['按标准隔离并留下记录。', '先放行，别影响今天的进度。', '要求负责人确认是否可以例外。', '先做必要检查，非关键项稍后补齐。']],
+      ['原料或零件延迟，生产和交付都在催你。你会：', 'politics', ['把库存、节点和影响同步给关键人。', '先到处找替代物，把缺口补上。', '明确哪些承诺不能替现场做决定。', '先找真正能调资源的人协调。']],
+      ['连续轮班后还要临时加班，你会：', 'drive', ['先确认安全底线和必须完成的量。', '只要现场需要就继续顶。', '完成规定工时和关键工序，额外部分重新排。', '先休息恢复，再决定能不能接。']],
+    ],
+    construction: [
+      ['现场发现天气、地质或安全条件变化，原计划不能继续。你会：', 'boundary', ['先停在安全底线，重新确认方案。', '先赶一点进度，边做边处理。', '按规定上报，未经确认不继续。', '找班组一起评估替代路径。']],
+      ['材料没有按时到场，多个班组都在等。你会：', 'execution', ['先调整可施工顺序，并同步影响。', '自己到处催，先把现场撑住。', '只做已有材料能完成的部分。', '找现场负责人重新安排人手。']],
+      ['验收时发现实际情况和记录不一致，你会：', 'conflict', ['把差异逐项摆出来，请相关人共同确认。', '先按现场结果改掉记录，别让事情变复杂。', '暂停签字，要求补充依据。', '先记录问题，等负责人判断是否返工。']],
+      ['工期不断被压缩，但安全和质量要求没有变化。你会：', 'upward', ['把工期、资源和风险摆出来请负责人取舍。', '先加班顶住，不让现场停。', '只做约定范围，超出的重新安排。', '先守住关键节点，其他顺延。']],
+    ],
+    service: [
+      ['高峰期现场排队，系统又突然变慢。你会：', 'execution', ['先分流并告诉顾客大概等待时间。', '谁催得最凶先处理谁。', '请负责人增援，不把人手问题全扛下。', '先处理标准事项，复杂情况稍后解释。']],
+      ['顾客情绪很大，但提出的要求明显超出规则。你会：', 'conflict', ['说明规则和可替代的处理办法。', '先答应下来，评价比规则重要。', '请店长或负责人介入，不越权承诺。', '保持礼貌，按规则结束沟通。']],
+      ['临时排班变动，休息时间和收入安排都受到影响。你会：', 'boundary', ['确认变动原因、时长和补偿安排。', '先答应，别让同事觉得你不配合。', '说明自己能接受的边界。', '先完成当天必要工作，之后再正式沟通。']],
+      ['一天处理了很多负面情绪，下班后你会：', 'rumination', ['做一个收尾动作，离开现场就切换。', '反复想自己哪句话说得不够好。', '找同事吐槽几句，然后继续生活。', '继续看消息，保持随时响应。']],
+    ],
+    media: [
+      ['内容或稿件临近交付，委托方突然改变方向。你会：', 'conflict', ['先确认必须变化的部分，保住能复用的内容。', '先全部重做，别让人觉得不配合。', '说明时间成本，请对方删减要求。', '先记录变化，等关键人确认后再动。']],
+      ['作品反馈平平，身边人却都在追问数据。你会：', 'rumination', ['找一个可验证的小改动继续试。', '反复怀疑是不是自己不适合。', '按稳定节奏继续产出，不被一次结果带跑。', '找同行讨论是选题还是表达出了问题。']],
+      ['临时任务占用了创作时间，但没有明确回报。你会：', 'boundary', ['问清价值、时长和优先级再接。', '先接下来，机会不能错过。', '说明非工作时间不默认可用。', '只完成关键部分，其余重新安排。']],
+      ['多个合作方都想让自己的意见排第一。你会：', 'politics', ['列出共同目标和不可妥协项。', '谁声音最大就先跟谁。', '保留专业判断，说明修改会带来的影响。', '先观察关键决策人最终看重什么。']],
+    ],
+    public: [
+      ['材料不全但办理人已经等了很久，你会：', 'boundary', ['把缺失材料和可办理范围一次讲清。', '先想办法通融，别让对方白跑。', '按标准办理并给出补正清单。', '请有权限的人确认是否存在正式例外。']],
+      ['同一事项在几个部门之间来回转，群众或业务方反复催问。你会：', 'execution', ['按时间线重新确认牵头和下一步。', '自己先把缺口补上。', '请上级明确责任部门。', '先找真正能推动的人协助。']],
+      ['政策或办事标准临时调整，手头事项已经做到一半。你会：', 'upward', ['确认新旧标准和适用范围，再继续。', '先按新标准全部重做。', '保留原记录，等正式口径明确。', '请负责人给出过渡处理办法。']],
+      ['工作完成后几乎没有反馈，评价也说不清。你会：', 'drive', ['自己留痕复盘，确认下一次更稳。', '反复猜是不是哪里做错了。', '按标准完成，不把评价当唯一回报。', '主动约负责人确认重点和改进点。']],
+    ],
+    other: [
+      ['工作地点、时间或服务对象经常变化，你最先会做什么？', 'execution', ['先确认当天最重要的结果和边界。', '跟着现场节奏走，遇到问题再补。', '只完成明确交代的必要事项。', '观察熟手做法，再选自己的节奏。']],
+      ['工具、设备或资源突然不够用，但事情不能完全停下。你会：', 'drive', ['先找替代办法，保证关键部分继续。', '先把能做的都做了，之后再补资源。', '明确缺口和风险，不用个人硬扛。', '暂停非必要工作，等资源到位。']],
+      ['别人用自己的职业经验评价你的选择，你会：', 'conflict', ['说明实际约束，请对方基于事实讨论。', '先听着，回去反复想是不是自己错了。', '礼貌接受建议，仍按自己的判断行动。', '先观察对方是否真的了解现场。']],
+      ['工作结束后，边界仍不清楚，第二天可能继续被找。你会：', 'boundary', ['留下交接记录并写明下一步。', '保持在线，别人需要就继续响应。', '说明自己的可响应时间和范围。', '只处理真正紧急的情况。']],
+    ],
+  };
+  Object.entries(industryExtraPools).forEach(([industryId, pool]) => pool.forEach(([scene, focus, texts]) => {
+    industryPools[industryId].push([scene, focus, scenarioRows(focus, texts)]);
+  }));
+
+  const roleTrackPools = {
+    product: ['需求方临时改了目标，但时间和资源都没有增加。你会：', '执行过程中不同人对“做好”的理解不一样。你会：'],
+    engineer: ['设备、系统或工具出现异常，现场希望你立刻给结论。你会：', '技术判断需要让非专业的人做决定时，你会：'],
+    analyst: ['报表口径临时变化，但历史数据还没有重算。你会：', '有人希望你把不理想的数字解释得更好看。你会：'],
+    designer: ['稿件已经接近完成，临时又出现一轮完全不同的审美意见。你会：', '别人只说“感觉不对”，却没有指出具体位置。你会：'],
+    doctor: ['接诊量突然增加，同时还要完成记录和交接。你会：', '患者或家属要求你给出超出专业判断范围的保证。你会：'],
+    nurse: ['交班时发现关键护理信息没有写清，下一位同事已经到岗。你会：', '连续值班后现场又来了一项急事，你会：'],
+    teacher: ['家长希望你临时增加大量个别辅导，但本周安排已满。你会：', '课堂效果没有达到预期，学生反馈也很直接。你会：'],
+    'account-manager': ['客户临时要求你出差或改约，但内部资源没有同步。你会：', '客户迟迟不确认，内部却要求你给出成交时间。你会：'],
+    'sales-representative': ['你连续拜访却被客户拒绝，月底目标还差一截。你会：', '客户只愿意试用或压价，不愿意按完整方案合作。你会：'],
+    'customer-service': ['用户已经带着怒气来电，问题却需要其他部门处理。你会：', '同一类投诉一天出现很多次，你会：'],
+    'store-service': ['门店高峰期人手不足，顾客和同事都在催。你会：', '顾客要求明显超出门店规则，还拿差评施压。你会：'],
+    'operations-specialist': ['活动当天临时缺人，现场却不能暂停。你会：', '多个渠道都在催你给出相同事项的不同口径。你会：'],
+    administration: ['临时接到一项材料、会务或人员安排，原工作没人接手。你会：', '同事把一次性帮忙变成了固定行政事务。你会：'],
+    'civil-servant': ['群众反复催办，但流程和材料都还没有满足要求。你会：', '几个部门对同一事项的解释不一致。你会：'],
+    creator: ['选题数据低于预期，但粉丝已经在催下一条。你会：', '品牌合作要求和你平时的表达风格不太一致。你会：'],
+    'production-worker': ['设备异常发生在交接班前，现场希望你先把产量顶住。你会：', '质量标准和现场进度发生冲突时，你会：'],
+  };
+  const roleTrackFocuses = {
+    product: ['upward', 'boundary'], engineer: ['execution', 'upward'], analyst: ['execution', 'conflict'], designer: ['conflict', 'rumination'],
+    doctor: ['execution', 'boundary'], nurse: ['execution', 'drive'], teacher: ['boundary', 'rumination'], 'account-manager': ['boundary', 'upward'],
+    'sales-representative': ['rumination', 'boundary'], 'customer-service': ['pleasing', 'execution'], 'store-service': ['execution', 'conflict'],
+    'operations-specialist': ['execution', 'politics'], administration: ['boundary', 'execution'], 'civil-servant': ['boundary', 'conflict'],
+    creator: ['rumination', 'boundary'], 'production-worker': ['execution', 'boundary'],
+  };
+  const roleTrackQuestions = [];
+  Object.entries(roleTrackPools).forEach(([roleTrack, scenes]) => scenes.forEach((scene, index) => {
+    const focus = roleTrackFocuses[roleTrack][index];
+    const texts = index === 0
+      ? ['先确认目标、边界和最小可行的处理方式。', '先答应下来，之后再想办法补资源。', '说明当前限制，请对方重新取舍。', '先做关键部分，其他等信息完整后再动。']
+      : ['先把标准和风险写清，请相关人确认。', '先按对方说的做，别让事情继续卡住。', '坚持自己的专业边界，必要时请负责人判断。', '保留记录，等事实更充分后再决定。'];
+    const roleFamily = {
+      product: 'technical', engineer: 'technical', analyst: 'technical', designer: 'creative', doctor: 'professional', nurse: 'professional', teacher: 'professional',
+      'account-manager': 'sales', 'sales-representative': 'sales', 'customer-service': 'support', 'store-service': 'support', 'operations-specialist': 'operations',
+      administration: 'operations', 'civil-servant': 'public', creator: 'content', 'production-worker': 'operations',
+    }[roleTrack];
+    roleTrackQuestions.push(question(`rt-${roleTrack}-${index + 1}`, focus, scene, scenarioRows(focus, texts), { source: 'role', roleFamily, roleTrack }));
+  }));
+
   const roleQuestions = [];
   Object.entries(rolePools).forEach(([roleFamily, pool]) => pool.forEach((item, index) => {
     const [scene, focus, rows] = item;
     roleQuestions.push(question(`r-${roleFamily}-${index + 1}`, focus, scene, rows, { source: 'role', roleFamily }));
   }));
+  roleTrackQuestions.forEach((item) => roleQuestions.push(item));
   const industryQuestions = [];
   Object.entries(industryPools).forEach(([industryId, pool]) => pool.forEach((item, index) => {
     const [scene, focus, rows] = item;

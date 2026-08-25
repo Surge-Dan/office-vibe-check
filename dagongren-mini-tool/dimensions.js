@@ -1,6 +1,6 @@
 (function (root) {
   const data = root.DagongrenAssessmentData = root.DagongrenAssessmentData || {};
-  data.version = '2.0.0';
+  data.version = '2.1.0';
   data.dimensions = [
     { id: 'drive', name: '卷入驱动', low: '资源保留', high: '主动加码', color: '#E8513D', tipLow: '你更愿意把投入留给确定值得的战役。', tipHigh: '你容易把目标升级成一场必须拿下的战役。' },
     { id: 'rumination', name: '情绪内耗', low: '快速翻篇', high: '反复复盘', color: '#7A58C5', tipLow: '反馈很少在你脑内过夜。', tipHigh: '一句话可能在你脑内自动开十次复盘会。' },

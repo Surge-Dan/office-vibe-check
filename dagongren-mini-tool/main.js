@@ -95,7 +95,7 @@
       button.type = 'button'; button.className = 'option-button'; button.setAttribute('role', 'radio');
       button.setAttribute('aria-checked', String(state.answers[question.id] === option.id));
       marker.className = 'option-index'; marker.textContent = String.fromCharCode(65 + index);
-      copy.className = 'option-copy'; copy.textContent = contextApi.adaptScene(option.text, state.context);
+      copy.className = 'option-copy'; copy.textContent = question.source === 'context' ? option.text : contextApi.adaptScene(option.text, state.context);
       button.append(marker, copy);
       button.addEventListener('click', () => selectOption(option.id));
       list.append(button);
@@ -112,7 +112,7 @@
     setText('progress-label', `${String(state.index + 1).padStart(2, '0')} / ${totalLabel}`);
     setText('question-number', `Q.${String(state.index + 1).padStart(2, '0')}`);
     setText('focus-label', data.dimensions.find((dimension) => dimension.id === question.focus).name);
-    setText('question-title', contextApi.adaptScene(question.scene, state.context));
+    setText('question-title', question.source === 'context' ? question.scene : contextApi.adaptScene(question.scene, state.context));
     setText('quiz-message', '');
     byId('progress-fill').style.width = `${Math.round(((state.index + 1) / (state.route.length > 12 ? state.route.length : 18)) * 100)}%`;
     setText('next-button', state.index === state.route.length - 1 ? '生成报告 →' : '继续 →');

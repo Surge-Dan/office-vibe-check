@@ -1,5 +1,5 @@
 (function (root) {
-  const STAGE_COUNTS = { anchor: 12, branch: 36, context: 60, calibration: 4, hidden: 2 };
+  const STAGE_COUNTS = { anchor: 12, branch: 36, context: 132, calibration: 4, hidden: 2 };
   const validatedData = new WeakSet();
   const dataIndexes = new WeakMap();
 
@@ -12,7 +12,7 @@
     if (data && validatedData.has(data)) return true;
     assert(data && data.version, '题库版本无效');
     assert(Array.isArray(data.dimensions) && data.dimensions.length === 9, '维度数量必须为 9');
-    assert(Array.isArray(data.questions) && data.questions.length === 114, '题目数量必须为 114');
+    assert(Array.isArray(data.questions) && data.questions.length === 186, '题目数量必须为 186');
     assert(Array.isArray(data.archetypes) && data.archetypes.length === 22, '体质数量必须为 22');
     const dimensions = new Set(dimensionIds(data));
     assert(dimensions.size === 9, '维度 ID 配置无效');
@@ -29,7 +29,10 @@
       assert(Array.isArray(question.options) && question.options.length === 4, `题目 ${question.id} 必须有四个选项`);
       if (question.stage === 'context') {
         assert(question.source === 'role' || question.source === 'industry', `题目 ${question.id} 来源无效`);
-        if (question.source === 'role') assert(typeof question.roleFamily === 'string' && question.roleFamily, `题目 ${question.id} 岗位族群无效`);
+        if (question.source === 'role') {
+          assert(typeof question.roleFamily === 'string' && question.roleFamily, `题目 ${question.id} 岗位族群无效`);
+          if (question.roleTrack) assert(typeof question.roleTrack === 'string' && question.roleTrack, `题目 ${question.id} 具体岗位无效`);
+        }
         if (question.source === 'industry') assert(typeof question.industryId === 'string' && question.industryId, `题目 ${question.id} 行业簇无效`);
       }
       questionIds.add(question.id);
@@ -55,11 +58,14 @@
     const roleContextCounts = {};
     const industryContextCounts = {};
     data.questions.filter((question) => question.stage === 'context').forEach((question) => {
-      if (question.source === 'role') roleContextCounts[question.roleFamily] = (roleContextCounts[question.roleFamily] || 0) + 1;
+      if (question.source === 'role' && !question.roleTrack) roleContextCounts[question.roleFamily] = (roleContextCounts[question.roleFamily] || 0) + 1;
       if (question.source === 'industry') industryContextCounts[question.industryId] = (industryContextCounts[question.industryId] || 0) + 1;
     });
     ['management', 'technical', 'professional', 'operations', 'sales', 'content', 'support', 'public', 'student', 'independent'].forEach((family) => assert(roleContextCounts[family] === 4, `岗位族群 ${family} 必须有 4 道场景题`));
-    ['technology', 'finance', 'health', 'education', 'manufacturing', 'construction', 'service', 'media', 'public', 'other'].forEach((id) => assert(industryContextCounts[id] === 2, `行业簇 ${id} 必须有 2 道补充题`));
+    ['technology', 'finance', 'health', 'education', 'manufacturing', 'construction', 'service', 'media', 'public', 'other'].forEach((id) => assert(industryContextCounts[id] === 6, `行业簇 ${id} 必须有 6 道补充题`));
+    ['product', 'engineer', 'analyst', 'designer', 'doctor', 'nurse', 'teacher', 'account-manager', 'sales-representative', 'customer-service', 'store-service', 'operations-specialist', 'administration', 'civil-servant', 'creator', 'production-worker'].forEach((id) => {
+      assert(data.questions.filter((question) => question.source === 'role' && question.roleTrack === id).length === 2, `具体岗位 ${id} 必须有 2 道场景题`);
+    });
     data.dimensions.forEach((dimension) => {
       assert(data.questions.filter((question) => question.stage === 'branch' && question.focus === dimension.id).length === 4, `维度 ${dimension.id} 的分支题必须为 4 道`);
     });
@@ -96,6 +102,7 @@
       anchors: data.questions.filter((question) => question.stage === 'anchor'),
       branches: {},
       roleQuestions: {},
+      roleTrackQuestions: {},
       industryQuestions: {},
     };
     data.dimensions.forEach((dimension) => {
@@ -103,6 +110,7 @@
     });
     data.questions.filter((question) => question.stage === 'context' && question.source === 'role').forEach((question) => {
       (index.roleQuestions[question.roleFamily] = index.roleQuestions[question.roleFamily] || []).push(question);
+      if (question.roleTrack) (index.roleTrackQuestions[question.roleTrack] = index.roleTrackQuestions[question.roleTrack] || []).push(question);
     });
     data.questions.filter((question) => question.stage === 'context' && question.source === 'industry').forEach((question) => {
       (index.industryQuestions[question.industryId] = index.industryQuestions[question.industryId] || []).push(question);
@@ -218,7 +226,8 @@
     const contextApi = root.DagongrenContext;
     const context = contextApi ? contextApi.normalize(workplaceContext) : { roleFamily: 'other', industryId: 'other' };
     const industryCluster = contextApi && contextApi.getIndustryCluster ? contextApi.getIndustryCluster(context.industryId) : context.industryId;
-    const roleQuestions = pickContextQuestions(dataIndex.roleQuestions[context.roleFamily] || dataIndex.roleQuestions.other, selectedDimensions, answerHash, 2);
+    const rolePool = dataIndex.roleTrackQuestions[context.roleId] || dataIndex.roleQuestions[context.roleFamily] || dataIndex.roleQuestions.other;
+    const roleQuestions = pickContextQuestions(rolePool, selectedDimensions, answerHash, 2);
     const industryQuestions = pickContextQuestions(dataIndex.industryQuestions[industryCluster] || dataIndex.industryQuestions.other, selectedDimensions, answerHash >>> 3, 2);
     const branches = selectedDimensions.slice(0, 2).map((id, dimensionIndex) => {
       const pool = dataIndex.branches[id];
